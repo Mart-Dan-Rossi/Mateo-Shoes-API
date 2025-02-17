@@ -23,10 +23,10 @@ const createUser = async (req, res, next) => {
     data.email = data.email.toLowerCase();
 
     let user = await User.findOne({ email: data.email });
-    if (user) throw new ErrorHandler(400, 'Email already exists');
+    if (user) throw new ErrorHandler(400, 'El mail ya existe');
 
     user = await User.findOne({ phoneNumber: data.phoneNumber });
-    if (user) throw new ErrorHandler(400, 'Phone Number already exists');
+    if (user) throw new ErrorHandler(400, 'Número de teléfono ya existe');
 
     const salt = await bcrypt.genSalt(8);
     data.password = await bcrypt.hash(data.password, salt);
@@ -52,7 +52,7 @@ const createUser = async (req, res, next) => {
     const sendEmailResult = await sendEmail(data.email, '', verificationLink);
 
     if (!sendEmailResult) {
-      throw new ErrorHandler(500, 'Failed to send email');
+      throw new ErrorHandler(500, 'Fallo al enviar el mail');
     }
     const userJson = user.toJSON();
     delete userJson.password;
@@ -60,7 +60,7 @@ const createUser = async (req, res, next) => {
     res.status(201).json({
       status: 'success',
       message:
-        'User registered successfully. A verification email has been sent.',
+        'Usuario registrado exitosamente. Un mail de verificación ha sido enviado.',
       data: userJson,
     });
   } catch (error) {
@@ -81,14 +81,14 @@ const loginUser = async (req, res, next) => {
     if (!user)
       throw new ErrorHandler(
         400,
-        'User not found. There is no account associated with this email. Please proceed to the registration page to create a new account.'
+        'Usuario no encontrado. No hay cuenta asociada a este mail. Por favor ve a la página de registro para crear una nueva cuenta.'
       );
 
     const validatePassword = await bcrypt.compare(data.password, user.password);
     if (!validatePassword)
       throw new ErrorHandler(
         400,
-        'Invalid login credentials. Please check your email and password and try again.'
+        'Credenciales incorrectas. Por favor verifica el mail y contraseña nuevamente.'
       );
 
     // Generate token for access
@@ -98,7 +98,7 @@ const loginUser = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Login successful',
+      message: 'Logueado con éxito',
       data: {
         user,
         token,
@@ -124,7 +124,7 @@ const forgotPassword = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .json({ message: 'User not found. Please proceed to registration.' });
+        .json({ message: 'Usuario no encontrado. Por favor, regístrate.' });
     }
 
     const secretKey = process.env.JWT_TOKEN;
@@ -136,12 +136,12 @@ const forgotPassword = async (req, res) => {
     const sendEmailResult = await sendEmail(email, resetPasswordLink);
 
     if (!sendEmailResult) {
-      throw new ErrorHandler(500, 'Failed to send email');
+      throw new ErrorHandler(500, 'Fallo al mandar el mail');
     }
 
     res.json({
       message:
-        'A password reset email has been sent successfully. Please check your inbox for further instructions.',
+        'Un correo para resetear la contraseña ha sido mandado exitosamente. por favor verifica tu bandeja de entrada para más instrucciones.',
       status: 'success',
     });
   } catch (error) {
@@ -149,7 +149,7 @@ const forgotPassword = async (req, res) => {
     res.status(error.statusCode || 500).json({
       error:
         error.message ||
-        'An unexpected error occurred. Please try again later.',
+        'Un error inesperado ha ocurrido. Por favor intenta nuevamente luego',
     });
   }
 };
@@ -177,7 +177,9 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .json({ message: 'User not found. Please proceed to registration.' });
+        .json({
+          message: 'Usuario no encontrado. Por favor proceda a registrarse.',
+        });
     }
 
     // Update user's password
@@ -185,10 +187,10 @@ const resetPassword = async (req, res) => {
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
-    res.json({ message: 'Password reset successful', status: 'success' });
+    res.json({ message: 'Cambio de contraseña exitoso', status: 'success' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'An error occurred' });
+    res.status(500).json({ message: 'Ha ocurrido un error' });
   }
 };
 
@@ -204,7 +206,7 @@ const verifyToken = async (req, res, next) => {
     const user = await User.findOne({ _id: decodedToken.sub });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error('Usuario no encontrado');
     }
 
     // Mark the user as verified
@@ -213,7 +215,7 @@ const verifyToken = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Email verification successful',
+      message: 'Mail verificado exitosamente.',
     });
   } catch (error) {
     next(error);
@@ -228,8 +230,8 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
       to: email,
       from: process.env.EMAIL_FROM,
       subject: !verificationLink
-        ? 'Password Reset Request'
-        : 'Verify Your Email Address',
+        ? 'Pedido de cambio de contraseña'
+        : 'Verifica tu email',
       html: `
       <html>
         <body>
@@ -240,30 +242,29 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
                   href=""
                   style="font-size:1.4rem;color: #30C376;text-decoration:none;font-weight:600"
                 >
-                  Bimal's Closet
+                  MateoShooes
                 </a>
               </div>
               <p style="font-size:1.1rem">Hi, there.</p>
               <p>
                 ${
                   verificationLink
-                    ? "Thank you for choosing Bimal's Closet. Use the following link to complete your verification processes. Link is valid for 5 minutes"
-                    : 'We have received a request to reset the password for your account. To complete the process, please click the link below.'
+                    ? 'Gracias por elegir MateoShooest. Usa el siguiente link para completar tu proceso de verificación. El link es válido por 5 minutos.'
+                    : 'Hemos recivido un pedido de cambio de contraseña para tu cuenta. Para completar el proceso haga click en el link a continuación.'
                 }
               </p>
               <p>${!verificationLink ? resetPasswordLink : verificationLink}</p>
               ${
                 resetPasswordLink
-                  ? `<p>If you did not initiate this request or have any concerns, please disregard this email.</p>`
+                  ? `<p>Si usted no inició el pedido, por favor ignore este mensaje.</p>`
                   : ''
               }
               
               <p style="font-size:0.9rem;">
-                Regards,
+                Muchas gracias,
                 <br />
-                Bimal's Closet
+                MateoShooes
               </p>
-              <p>Abuja, Nigeria.</p>
               <hr style="border:none;border-top:1px solid #eee" />
             </div>
           </div>
@@ -275,7 +276,7 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
     await sgMail.send(msg);
     return true;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Error mandando mail:', error);
     return false;
   }
 };

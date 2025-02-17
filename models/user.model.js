@@ -4,21 +4,21 @@ const userSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, 'fullName is required'],
+      required: [true, 'nombre completo requerido'],
     },
     email: {
       type: String,
-      required: [true, 'email is required'],
+      required: [true, 'mail requerido'],
       unique: true,
     },
     phoneNumber: {
       type: Number,
-      required: [true, 'phoneNumber is required'],
+      required: [true, 'número telefónico requerido'],
       unique: true,
     },
     password: {
       type: String,
-      required: [true, 'password is required'],
+      required: [true, 'contraseña requerida'],
     },
     token: {
       type: String,

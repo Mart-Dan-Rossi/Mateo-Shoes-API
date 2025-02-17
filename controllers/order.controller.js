@@ -7,7 +7,7 @@ const createOrder = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: "Order has been created successfully",
+      message: "La órden ha sido creada exitosamente",
       data: {
         order,
       },
@@ -21,11 +21,11 @@ const getParticularOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
     const order = await Order.findById(id).populate('user products.product');
-    if (!order) throw new ErrorHandler(404, 'Order does not exist');
+    if (!order) throw new ErrorHandler(404, 'La órden no existe');
 
     res.status(200).json({
       status: 'success',
-      message: "Order has been fetched successfully",
+      message: "La órden ha sido buscada exitosamente",
       data: {
         order,
       },
@@ -43,7 +43,7 @@ const getMyOrders = async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: "Orders has been fetched successfully",
+      message: "Las órdenes han sido buscadas exitosamente",
       data: {
         order,
       },

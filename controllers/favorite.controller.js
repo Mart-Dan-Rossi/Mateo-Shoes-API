@@ -1,6 +1,7 @@
 const Favorite = require('../models/favorite.model');
 const Product = require('../models/product.model');
 const User = require('../models/user.model');
+
 // Add a product to a user's favorites
 const addFavorite = async (req, res) => {
   const { userId, productId } = req.body;
@@ -10,7 +11,9 @@ const addFavorite = async (req, res) => {
     const product = await Product.findById(productId);
 
     if (!user || !product) {
-      return res.status(404).json({ error: 'User or product not found.' });
+      return res
+        .status(404)
+        .json({ error: 'Usuario o producto no encontrados.' });
     }
 
     // Check if the favorite already exists
@@ -21,7 +24,7 @@ const addFavorite = async (req, res) => {
     if (existingFavorite) {
       return res
         .status(400)
-        .json({ error: 'Product is already in favorites.' });
+        .json({ error: 'El producto ya está en favoritos.' });
     }
 
     // Create and save the favorite
@@ -30,11 +33,11 @@ const addFavorite = async (req, res) => {
     await product.save();
     await favorite.save();
 
-    res.json({ message: 'Product added to favorites.' });
+    res.json({ message: 'Producto agregado a favoritos.' });
   } catch (error) {
     res
       .status(500)
-      .json({ error: 'An error occurred while adding the favorite.' });
+      .json({ error: 'Un error ha ocurrido agregando a favoritos.' });
   }
 };
 
@@ -47,7 +50,9 @@ const removeFavorite = async (req, res) => {
     const product = await Product.findById(productId);
 
     if (!user || !product) {
-      return res.status(404).json({ error: 'User or product not found.' });
+      return res
+        .status(404)
+        .json({ error: 'Usuario o producto no encontrados.' });
     }
 
     // Find and delete the favorite
@@ -55,11 +60,11 @@ const removeFavorite = async (req, res) => {
     product.isFavorite = false;
     await product.save();
 
-    res.json({ message: 'Product removed from favorites.' });
+    res.json({ message: 'Producto removido de favoritos.' });
   } catch (error) {
     res
       .status(500)
-      .json({ error: 'An error occurred while removing the favorite.' });
+      .json({ error: 'Un error ha ocurrido al remover de favoritos.' });
   }
 };
 
@@ -73,9 +78,9 @@ const getMyFavoriteProducts = async (req, res) => {
 
     res.json(favoriteProducts.map((fav) => fav.product));
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'An error occurred while retrieving favorite products.' });
+    res.status(500).json({
+      error: 'Un error ha ocurrido al buscar los productos favoritos.',
+    });
   }
 };
 

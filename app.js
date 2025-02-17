@@ -13,7 +13,7 @@ const port = Number(process.env.PORT || 3001);
 
 app.use(express.json());
 app.use('/api', routeRouter);
-app.use('/api/user', userRoute);
+app.use('/api/users', userRoute);
 app.use(handleError);
 
 async function init() {

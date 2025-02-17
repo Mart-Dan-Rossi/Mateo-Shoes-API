@@ -35,7 +35,7 @@ const getParticularProduct = async (req, res, next) => {
     const { slug } = req.params;
     const product = await Product.findOne({ slug });
 
-    if (!product) throw new ErrorHandler(404, 'Product does not exist');
+    if (!product) throw new ErrorHandler(404, 'El producto no existe');
 
     res.status(200).json({
       status: 'success',
@@ -55,7 +55,7 @@ const createProduct = async (req, res, next) => {
     data.slug = slugify(data.name, { lower: true });
     const findProduct = await Product.findOne({ slug: data.slug });
 
-    if (findProduct) throw new ErrorHandler(400, 'Product already exit!');
+    if (findProduct) throw new ErrorHandler(400, 'El producto ya existe!');
 
     const product = await Product.create(data);
 
@@ -80,7 +80,7 @@ const updateProduct = async (req, res, next) => {
       new: true,
     });
 
-    if (!product) throw new ErrorHandler(404, 'Product does not exist');
+    if (!product) throw new ErrorHandler(404, 'El producto no existe');
 
     res.status(200).json({
       status: 'success',
@@ -99,11 +99,11 @@ const deleteProduct = async (req, res, next) => {
     const { slug } = req.params;
     const product = await Product.findOneAndDelete({ slug });
 
-    if (!product) throw new ErrorHandler(404, 'Product does not exist');
+    if (!product) throw new ErrorHandler(404, 'El producto no existe');
 
     res.status(201).json({
       status: 'success',
-      message: 'Product has been deleted successfully',
+      message: 'El producto fue eliminado exitosamente',
     });
   } catch (error) {
     next(error);
@@ -115,11 +115,11 @@ const searchProduct = async (req, res, next) => {
     const { q } = req.query;
     const products = await Product.find({ name: { $regex: q, $options: 'i' } });
 
-    if (products.length < 1) throw new ErrorHandler(404, 'No product found');
+    if (products.length < 1) throw new ErrorHandler(404, 'No se ha encontrado ningún producto');
 
     res.status(201).json({
       status: 'success',
-      message: 'Product has been found successfully',
+      message: 'Se encontró el producto exitosamente',
       products,
     });
   } catch (error) {
