@@ -53,51 +53,60 @@ const createProduct = async (req, res) => {
     const product = new Product(req.body);
     await product.save();
 
-    res.json({ message: 'Producto agregando exitosamente.' });
+    res.json({ message: 'Producto agregado a favoritos.' });
   } catch (error) {
     res
       .status(500)
-      .json({ error: 'Un error ha ocurrido agregando el producto.' });
+      .json({ error: 'Un error ha ocurrido agregando a favoritos.' });
   }
 };
 
 // Update a particular product
 const updateProduct = async (req, res, next) => {
   try {
-    const { slug } = req.params;
-    const data = req.body;
+    const { name, slug, images, price, sizeOptions, desc, tags } = req.params;
 
-    const product = await Product.findOneAndUpdate({ slug }, data, {
-      new: true,
-    });
+    const product = await Product.findOne({ slug });
 
     if (!product) throw new ErrorHandler(404, 'El producto no existe');
 
-    res.status(200).json({
-      status: 'success',
-      data: {
-        product,
-      },
-    });
+    product.name = name;
+    product.slug = slug;
+    product.images = images;
+    product.price = price;
+    product.sizeOptions = sizeOptions;
+    product.desc = desc;
+    product.tags = tags;
+
+    await product.save();
+
+    res.json({ message: 'Producto modificado exitosamente.' });
   } catch (error) {
-    next(error);
+    res
+      .status(500)
+      .json({ error: 'Un error ha ocurrido modificando producto.' });
   }
 };
 
 // Delete a particular product
-const deleteProduct = async (req, res, next) => {
+const deleteProduct = async (req, res) => {
+  const { _id } = req.body;
+
   try {
-    const { slug } = req.params;
-    const product = await Product.findOneAndDelete({ slug });
+    const product = await Product.findById(_id);
 
-    if (!product) throw new ErrorHandler(404, 'El producto no existe');
+    if (!product) {
+      return res.status(404).json({ error: 'Producto no encontrado.' });
+    }
 
-    res.status(201).json({
-      status: 'success',
-      message: 'El producto fue eliminado exitosamente',
-    });
+    // Find and delete the product
+    await Product.findByIdAndDelete(_id);
+
+    res.json({ message: 'Producto eliminado.' });
   } catch (error) {
-    next(error);
+    res
+      .status(500)
+      .json({ error: 'Un error ha ocurrido al eliminar el producto.' });
   }
 };
 

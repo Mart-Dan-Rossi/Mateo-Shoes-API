@@ -30,11 +30,11 @@ router.route('/').get(welcomePage);
 
 router.route('/products').get(getAllProductsList);
 
+router.post('/products/add', createProduct);
+router.delete('/products/remove', deleteProduct);
 router.get('/products/search', searchProduct);
 router.get('/products/:slug', getParticularProduct);
-router.post('/products/add', createProduct);
 router.post('/products/update', updateProduct);
-router.post('/products/remove', deleteProduct);
 
 router.post('/favorite/add', addFavorite);
 router.delete('/favorite/remove', removeFavorite);
