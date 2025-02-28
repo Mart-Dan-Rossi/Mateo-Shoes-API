@@ -9,8 +9,8 @@ const {
   getAllProductsList,
   getParticularProduct,
   createProduct,
-  // updateProduct,
-  // deleteProduct,
+  updateProduct,
+  deleteProduct,
   searchProduct,
 } = require('../controllers/product.controller');
 const { isLoggedIn } = require('../middlewares/auth');
@@ -19,9 +19,6 @@ const {
   removeFavorite,
   getMyFavoriteProducts,
 } = require('../controllers/favorite.controller');
-const {
-  createPaymentPreference,
-} = require('../controllers/mercadopago.controllers');
 
 const router = express.Router();
 
@@ -35,7 +32,9 @@ router.route('/products').get(getAllProductsList);
 
 router.get('/products/search', searchProduct);
 router.get('/products/:slug', getParticularProduct);
-router.post('/products', createProduct);
+router.post('/products/add', createProduct);
+router.post('/products/update', updateProduct);
+router.post('/products/remove', deleteProduct);
 
 router.post('/favorite/add', addFavorite);
 router.delete('/favorite/remove', removeFavorite);
@@ -45,7 +44,5 @@ router.get('/favorite/my-favorites', isLoggedIn, getMyFavoriteProducts);
 //   .route('/product/:slug')
 //   .patch(updateProduct)
 //   .delete(deleteProduct);
-
-router.post('/create_preference', createPaymentPreference);
 
 module.exports = router;

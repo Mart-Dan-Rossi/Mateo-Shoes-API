@@ -3,11 +3,6 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
   {
-    _id: {
-      type: String,
-      required: [true, 'id is required'],
-      unique: true,
-    },
     name: {
       type: String,
       required: [true, 'Name is required'],
@@ -18,24 +13,34 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Slug is required'],
       unique: true,
     },
-    desc: {
-      type: String,
-      required: [true, "Field can't be blank"],
-    },
-    image: {
+    images: {
       type: [String],
-    },
-    category: {
-      type: String,
-      required: [true, 'Please select a category'],
     },
     price: {
       type: Number,
       required: true,
     },
+    sizeOptions: {
+      type: Map,
+      of: [
+        {
+          size: { type: Number, required: true },
+          quantity: { type: Number, required: true },
+        },
+      ],
+      required: true,
+    },
+    desc: {
+      type: String,
+      required: false,
+    },
+    tags: {
+      type: [String],
+      required: false,
+    },
     isFavorite: {
       type: Boolean,
-      required: true,
+      required: false,
     },
   },
   { timestamps: true }

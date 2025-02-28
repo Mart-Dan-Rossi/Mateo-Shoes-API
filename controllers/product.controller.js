@@ -48,25 +48,16 @@ const getParticularProduct = async (req, res, next) => {
   }
 };
 
-// Post/Create a particular product
-const createProduct = async (req, res, next) => {
+const createProduct = async (req, res) => {
   try {
-    const data = req.body;
-    data.slug = slugify(data.name, { lower: true });
-    const findProduct = await Product.findOne({ slug: data.slug });
+    const product = new Product(req.body);
+    await product.save();
 
-    if (findProduct) throw new ErrorHandler(400, 'El producto ya existe!');
-
-    const product = await Product.create(data);
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        product,
-      },
-    });
+    res.json({ message: 'Producto agregando exitosamente.' });
   } catch (error) {
-    next(error);
+    res
+      .status(500)
+      .json({ error: 'Un error ha ocurrido agregando el producto.' });
   }
 };
 
@@ -115,7 +106,8 @@ const searchProduct = async (req, res, next) => {
     const { q } = req.query;
     const products = await Product.find({ name: { $regex: q, $options: 'i' } });
 
-    if (products.length < 1) throw new ErrorHandler(404, 'No se ha encontrado ningún producto');
+    if (products.length < 1)
+      throw new ErrorHandler(404, 'No se ha encontrado ningún producto');
 
     res.status(201).json({
       status: 'success',
