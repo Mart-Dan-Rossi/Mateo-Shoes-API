@@ -92,9 +92,7 @@ const loginUser = async (req, res, next) => {
       );
 
     // Generate token for access
-    const token = jwt.sign({ sub: user._id }, process.env.JWT_TOKEN, {
-      expiresIn: '2h',
-    });
+    const token = jwt.sign({ sub: user._id }, process.env.JWT_TOKEN);
 
     res.status(200).json({
       status: 'success',
@@ -175,11 +173,9 @@ const resetPassword = async (req, res) => {
     const user = await User.findOne({ _id: userId });
 
     if (!user) {
-      return res
-        .status(404)
-        .json({
-          message: 'Usuario no encontrado. Por favor proceda a registrarse.',
-        });
+      return res.status(404).json({
+        message: 'Usuario no encontrado. Por favor proceda a registrarse.',
+      });
     }
 
     // Update user's password

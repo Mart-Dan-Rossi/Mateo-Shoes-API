@@ -64,7 +64,8 @@ const createProduct = async (req, res) => {
 // Update a particular product
 const updateProduct = async (req, res, next) => {
   try {
-    const { name, slug, images, price, sizeOptions, desc, tags } = req.params;
+    const { name, slug, images, price, sizeOptions, desc, tags, brand } =
+      req.body;
 
     const product = await Product.findOne({ slug });
 
@@ -75,6 +76,7 @@ const updateProduct = async (req, res, next) => {
     product.images = images;
     product.price = price;
     product.sizeOptions = sizeOptions;
+    product.brand = brand.toLowerCase();
     product.desc = desc;
     product.tags = tags;
 

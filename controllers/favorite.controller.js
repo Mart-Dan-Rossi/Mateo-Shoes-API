@@ -30,6 +30,7 @@ const addFavorite = async (req, res) => {
     // Create and save the favorite
     const favorite = new Favorite({ user: userId, product: productId });
     product.isFavorite = true;
+
     await product.save();
     await favorite.save();
 
