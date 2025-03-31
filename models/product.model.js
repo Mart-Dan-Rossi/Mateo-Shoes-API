@@ -1,4 +1,4 @@
-const { required } = require('joi');
+const { required, string } = require('joi');
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema(
@@ -49,6 +49,17 @@ const productSchema = new mongoose.Schema(
     },
     isFavorite: {
       type: Boolean,
+      required: false,
+    },
+    reservedData: {
+      type: [
+        {
+          usSize: { type: Number, required: [true, 'Talle US es requerido'] },
+          color: { type: String, required: [true, 'Color requerido'] },
+          quantity: { type: Number, required: [true, 'Cantidad requerida'] },
+          usersId: { type: [String], required: [true, 'userId is required'] },
+        },
+      ],
       required: false,
     },
   },

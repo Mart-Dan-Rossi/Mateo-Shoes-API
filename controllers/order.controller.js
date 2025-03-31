@@ -1,13 +1,14 @@
-const Order = require('../models/order.model');
+const BEOrder = require('../models/order.model');
+const { ErrorHandler } = require('../utils/errorHandler');
 
-const createOrder = async (req, res, next) => {
+const createBEOrder = async (req, res, next) => {
   try {
     const data = req.body;
-    const order = await Order.create({ ...data, user: req.user._id });
+    const order = await BEOrder.create({ ...data, user: req.user._id });
 
     res.status(200).json({
       status: 'success',
-      message: "La órden ha sido creada exitosamente",
+      message: 'La órden ha sido creada exitosamente',
       data: {
         order,
       },
@@ -17,15 +18,60 @@ const createOrder = async (req, res, next) => {
   }
 };
 
+const updateBEOrder = async (req, res) => {
+  try {
+    const data = req.body;
+
+    let order = await BEOrder.findById(data._id);
+    if (!order) {
+      return res.status(404).json({ message: 'Orden no encontrada' });
+    }
+
+    if (data.name) order.name = data.name;
+    if (data.phone) order.phone = data.phone;
+    if (data.mail) order.mail = data.mail;
+    if (data.isDelivered !== undefined) order.isDelivered = data.isDelivered;
+
+    if (data.user) {
+      order.user = data.user;
+    } else if (!order.user) {
+      return res.status(400).json({ message: 'El usuario es requerido' });
+    }
+
+    if (data.products && Array.isArray(data.products)) {
+      order.products = data.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        sizeOption:
+          product.sizeOption && typeof product.sizeOption === 'object'
+            ? {
+                usSize: product.sizeOption.usSize || null,
+                color: product.sizeOption.color || null,
+                quantity: product.sizeOption.quantity || 0,
+              }
+            : null,
+      }));
+    }
+
+    await order.save();
+
+    res.status(200).json({ message: 'Orden actualizada correctamente', order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar la orden', error });
+  }
+};
+
 const getParticularOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const order = await Order.findById(id).populate('user products.product');
+    const order = await BEOrder.findById(id).populate('user orders.order');
     if (!order) throw new ErrorHandler(404, 'La órden no existe');
 
     res.status(200).json({
       status: 'success',
-      message: "La órden ha sido buscada exitosamente",
+      message: 'La órden ha sido buscada exitosamente',
       data: {
         order,
       },
@@ -37,13 +83,13 @@ const getParticularOrder = async (req, res, next) => {
 
 const getMyOrders = async (req, res, next) => {
   try {
-    const order = await Order.find({ user: req.user._id }).populate(
-      'user products.product'
+    const order = await BEOrder.find({ user: req.user._id }).populate(
+      'user orders.order'
     );
 
     res.status(200).json({
       status: 'success',
-      message: "Las órdenes han sido buscadas exitosamente",
+      message: 'Las órdenes han sido buscadas exitosamente',
       data: {
         order,
       },
@@ -53,4 +99,25 @@ const getMyOrders = async (req, res, next) => {
   }
 };
 
-module.exports = { createOrder, getParticularOrder, getMyOrders };
+const getAllOrdersList = async (req, res, next) => {
+  try {
+    const orders = await BEOrder.find();
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        orders,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createBEOrder,
+  updateBEOrder,
+  getParticularOrder,
+  getMyOrders,
+  getAllOrdersList,
+};

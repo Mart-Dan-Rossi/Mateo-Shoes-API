@@ -12,6 +12,24 @@ const sgMail = require('@sendgrid/mail');
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+const getUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) throw new ErrorHandler(404, 'Usuario no encontrado');
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createUser = async (req, res, next) => {
   try {
     // Validate data
@@ -278,6 +296,7 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
 };
 
 module.exports = {
+  getUser,
   createUser,
   loginUser,
   forgotPassword,

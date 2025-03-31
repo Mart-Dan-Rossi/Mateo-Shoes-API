@@ -4,6 +4,7 @@ const express = require('express');
 //   getParticularOrder,
 //   getMyOrders,
 // } = require('../controllers/order.controller');
+
 const {
   welcomePage,
   getAllProductsList,
@@ -12,13 +13,32 @@ const {
   updateProduct,
   deleteProduct,
   searchProduct,
+  updateMultipleProducts,
+  updateReservedStock,
 } = require('../controllers/product.controller');
+
 const { isLoggedIn } = require('../middlewares/auth');
+
 const {
   addFavorite,
   removeFavorite,
   getMyFavoriteProducts,
 } = require('../controllers/favorite.controller');
+
+const {
+  createOrder,
+  success,
+  failure,
+  pending,
+  webhoock,
+  createMPOrder,
+} = require('../controllers/mp.controllers');
+
+const {
+  getAllOrdersList,
+  createBEOrder,
+  updateBEOrder,
+} = require('../controllers/order.controller');
 
 const router = express.Router();
 
@@ -35,10 +55,23 @@ router.delete('/products/remove', deleteProduct);
 router.get('/products/search', searchProduct);
 router.get('/products/:slug', getParticularProduct);
 router.post('/products/update', updateProduct);
+router.post('/product/updateMultiple', updateMultipleProducts);
+router.post('/products/reserveProducts', updateReservedStock);
 
 router.post('/favorite/add', addFavorite);
 router.delete('/favorite/remove', removeFavorite);
 router.get('/favorite/my-favorites', isLoggedIn, getMyFavoriteProducts);
+
+router.route('/order').get(getAllOrdersList);
+router.post('/order/add', createBEOrder);
+router.post('/order/update', updateBEOrder);
+router.post('/order/create-order', createOrder);
+
+router.get('/order/ordersuccess', success);
+router.get('/order/orderfailure', failure);
+router.get('/order/orderpending', pending);
+
+router.post('/webhoock', webhoock);
 
 // router
 //   .route('/product/:slug')

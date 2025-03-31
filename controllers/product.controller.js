@@ -1,5 +1,4 @@
 const Product = require('../models/product.model');
-const slugify = require('slugify');
 const { ErrorHandler } = require('../utils/errorHandler');
 
 // Welcome
@@ -80,6 +79,9 @@ const updateProduct = async (req, res, next) => {
     product.desc = desc;
     product.tags = tags;
 
+    // Makes sure admins don't modify this field based on theyr current fav list
+    product.isFavorite = false;
+
     await product.save();
 
     res.json({ message: 'Producto modificado exitosamente.' });
@@ -90,7 +92,116 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-// Delete a particular product
+const updateMultipleProducts = async (req, res, next) => {
+  try {
+    const { products } = req.body;
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({ message: 'Lista de productos inválida' });
+    }
+
+    await Promise.all(
+      products.map(async (product) => {
+        await Product.updateOne({ _id: product.id }, { $set: product });
+      })
+    );
+
+    res.json({ status: 'success', message: 'Productos actualizados' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error en la actualización' });
+  }
+};
+
+const updateReservedStock = async (req, res) => {
+  let updatedProducts = [];
+
+  try {
+    const updates = req.body;
+
+    if (!updates || !Array.isArray(updates)) {
+      return res
+        .status(400)
+        .json({ message: 'Lista de actualizaciones inválida' });
+    }
+
+    for (const { id, reservedData, userId } of updates) {
+      const product = await Product.findById(id);
+      if (!product) {
+        throw new Error(`Producto con ID ${id} no encontrado.`);
+      }
+
+      let originalSizeOptions = JSON.parse(JSON.stringify(product.sizeOptions));
+      let originalReservedData = JSON.parse(
+        JSON.stringify(product.reservedData)
+      );
+
+      const matchingSizeOption = product.sizeOptions.find(
+        (sizeOption) =>
+          sizeOption.usSize === reservedData.usSize &&
+          sizeOption.color.toLowerCase() === reservedData.color.toLowerCase()
+      );
+
+      if (
+        !matchingSizeOption ||
+        matchingSizeOption.quantity < reservedData.quantity
+      ) {
+        throw new Error(
+          `Producto talle ${reservedData.usSize}US, color ${reservedData.color} y de ID ${id} no tiene suficiente stock.`
+        );
+      }
+
+      matchingSizeOption.quantity -= reservedData.quantity;
+
+      const existingReservation = product.reservedData.find(
+        (res) =>
+          res.usSize === reservedData.usSize &&
+          res.color.toLowerCase() === reservedData.color.toLowerCase()
+      );
+
+      if (existingReservation) {
+        existingReservation.quantity += reservedData.quantity;
+        existingReservation.usersId.push(userId);
+      } else {
+        product.reservedData.push({
+          usSize: reservedData.usSize,
+          color: reservedData.color,
+          quantity: reservedData.quantity,
+          usersId: [userId],
+        });
+      }
+
+      await product.save();
+      updatedProducts.push({
+        product,
+        originalSizeOptions,
+        originalReservedData,
+      });
+    }
+
+    res.json({
+      status: 'completed',
+      message:
+        'Reservas completadas exitosamente. Por favor completa el pago o comunicate con nosotros para continuar.',
+    });
+  } catch (error) {
+    console.error('Error en la reserva:', error);
+
+    for (const {
+      product,
+      originalSizeOptions,
+      originalReservedData,
+    } of updatedProducts) {
+      product.sizeOptions = originalSizeOptions;
+      product.reservedData = originalReservedData;
+      await product.save();
+    }
+
+    res.status(500).json({
+      message: 'Error en la reserva, cambios revertidos.',
+      error: error.message,
+    });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   const { _id } = req.body;
 
@@ -136,6 +247,8 @@ module.exports = {
   getParticularProduct,
   createProduct,
   updateProduct,
+  updateMultipleProducts,
+  updateReservedStock,
   deleteProduct,
   searchProduct,
 };
