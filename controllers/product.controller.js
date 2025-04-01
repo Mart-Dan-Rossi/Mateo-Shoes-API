@@ -159,13 +159,13 @@ const updateReservedStock = async (req, res) => {
 
       if (existingReservation) {
         existingReservation.quantity += reservedData.quantity;
-        existingReservation.usersId.push(userId);
+        existingReservation.userId.push(userId);
       } else {
         product.reservedData.push({
           usSize: reservedData.usSize,
           color: reservedData.color,
           quantity: reservedData.quantity,
-          usersId: [userId],
+          userId: userId,
         });
       }
 
