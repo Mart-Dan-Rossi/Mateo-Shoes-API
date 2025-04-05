@@ -3,6 +3,7 @@ const { ErrorHandler } = require('../utils/errorHandler');
 
 // Welcome
 const welcomePage = (req, res, next) => {
+  console.log('a');
   try {
     res.send(
       'Hey buddy! Feel free to create stuffs with this API. Try /products to get all products.'
@@ -111,7 +112,7 @@ const updateMultipleProducts = async (req, res, next) => {
   }
 };
 
-const updateReservedStock = async (req, res) => {
+const reserveStock = async (req, res) => {
   let updatedProducts = [];
 
   try {
@@ -154,12 +155,12 @@ const updateReservedStock = async (req, res) => {
       const existingReservation = product.reservedData.find(
         (res) =>
           res.usSize === reservedData.usSize &&
-          res.color.toLowerCase() === reservedData.color.toLowerCase()
+          res.color.toLowerCase() === reservedData.color.toLowerCase() &&
+          res.userId === userId
       );
 
       if (existingReservation) {
         existingReservation.quantity += reservedData.quantity;
-        existingReservation.userId.push(userId);
       } else {
         product.reservedData.push({
           usSize: reservedData.usSize,
@@ -197,6 +198,51 @@ const updateReservedStock = async (req, res) => {
 
     res.status(500).json({
       message: 'Error en la reserva, cambios revertidos.',
+      error: error.message,
+    });
+  }
+};
+
+const hideUserReservations = async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Falta el userId' });
+  }
+
+  try {
+    const products = await Product.find({
+      'reservedData.userId': userId,
+    });
+
+    if (products.length === 0) {
+      return res.status(404).json({
+        message: 'No se encontraron productos con reservas para este usuario.',
+      });
+    }
+
+    for (const product of products) {
+      let modified = false;
+
+      product.reservedData.forEach((reservation) => {
+        if (reservation.userId === userId && !reservation.hide) {
+          reservation.hide = true;
+          modified = true;
+        }
+      });
+
+      if (modified) {
+        await product.save();
+      }
+    }
+
+    res.status(200).json({
+      message: `Reservas del usuario ${userId} ocultadas exitosamente.`,
+    });
+  } catch (error) {
+    console.error('Error al ocultar reservas:', error);
+    res.status(500).json({
+      message: 'Error al ocultar las reservas del usuario.',
       error: error.message,
     });
   }
@@ -248,7 +294,8 @@ module.exports = {
   createProduct,
   updateProduct,
   updateMultipleProducts,
-  updateReservedStock,
+  reserveStock,
+  hideUserReservations,
   deleteProduct,
   searchProduct,
 };

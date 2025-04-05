@@ -10,11 +10,13 @@ const createOrder = async (req, res) => {
     let preference = {
       items: req.body.cartItems,
       back_urls: {
-        success: 'http://localhost:3000/api/ordersuccess',
-        failure: 'http://localhost:3000/api/orderfailure',
-        pending: 'http://localhost:3000/api/orderpending',
+        success: 'http://localhost:3000/pay/success',
+        failure: 'http://localhost:3000/pay/failure',
+        pending: 'http://localhost:3000/pay/pending',
       },
       auto_return: 'approved',
+      notification_url:
+        'https://c089-2800-21c5-c000-343-2de6-272c-bd77-2dc4.ngrok-free.app/api/webhook',
       metadata: { ...req.body.metadata, products: req.body.cartItems },
     };
 
@@ -36,33 +38,36 @@ const createOrder = async (req, res) => {
   }
 };
 
-const success = (req, res) => res.send('success');
-const failure = (req, res) => res.send('failure');
-const pending = (req, res) => res.send('pending');
+const success = (req, res) => res.send('pay/success');
+const failure = (req, res) => res.send('pay/failure');
+const pending = (req, res) => res.send('pay/pending');
 
-const webhoock = async (req, res) => {
+const receiveWebhook = async (req, res) => {
   const payment = req.query;
+  console.log('receiveWebhook', req);
 
-  try {
-    if (payment.type === 'payment') {
-      const data = await mercadopago.payment.findById(payment['data.id']);
+  // try {
+  //   if (payment.type === 'payment') {
+  //     const data = await mercadopago.payment.findById(payment['data.id']);
 
-      const order = await MPOrder.create({
-        user: data.metadata.user,
-        name: `${data.payer.first_name} ${data.payer.last_name}`,
-        phone: data.payer.phone,
-        products: data.metadata.products,
-      });
+  //     console.log('data: ', data);
 
-      console.log('New order incoming!:', order);
-      console.log(data);
-    }
+  //     const order = await MPOrder.create({
+  //       // user: data.metadata.user,
+  //       name: `${data.payer.first_name} ${data.payer.last_name}`,
+  //       phone: data.payer.phone,
+  //       // products: data.metadata.products,
+  //     });
 
-    res.sendStatus(204);
-  } catch (error) {
-    console.log('webhoock error: ', error);
-    return res.sendStatus(500).json({ error: error.message });
-  }
+  //     console.log('New order incoming!:', order);
+  //     console.log(data);
+  //   }
+
+  //   res.sendStatus(204);
+  // } catch (error) {
+  //   console.log('webhoock error: ', error);
+  //   return res.sendStatus(500).json({ error: error.message });
+  // }
 };
 
 module.exports = {
@@ -70,5 +75,5 @@ module.exports = {
   success,
   failure,
   pending,
-  webhoock,
+  receiveWebhook,
 };

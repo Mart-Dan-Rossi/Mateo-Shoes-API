@@ -58,6 +58,7 @@ const productSchema = new mongoose.Schema(
           color: { type: String, required: [true, 'Color requerido'] },
           quantity: { type: Number, required: [true, 'Cantidad requerida'] },
           userId: { type: String, required: [true, 'userId is required'] },
+          hide: { type: Boolean, required: false },
         },
       ],
       required: false,

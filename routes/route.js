@@ -14,7 +14,8 @@ const {
   deleteProduct,
   searchProduct,
   updateMultipleProducts,
-  updateReservedStock,
+  reserveStock,
+  hideUserReservations,
 } = require('../controllers/product.controller');
 
 const { isLoggedIn } = require('../middlewares/auth');
@@ -30,8 +31,7 @@ const {
   success,
   failure,
   pending,
-  webhoock,
-  createMPOrder,
+  receiveWebhook,
 } = require('../controllers/mp.controllers');
 
 const {
@@ -56,7 +56,9 @@ router.get('/products/search', searchProduct);
 router.get('/products/:slug', getParticularProduct);
 router.post('/products/update', updateProduct);
 router.post('/product/updateMultiple', updateMultipleProducts);
-router.post('/products/reserveProducts', updateReservedStock);
+
+router.post('/products/reserveProducts', reserveStock);
+router.post('/products/hideUserReservations', hideUserReservations);
 
 router.post('/favorite/add', addFavorite);
 router.delete('/favorite/remove', removeFavorite);
@@ -71,7 +73,7 @@ router.get('/order/ordersuccess', success);
 router.get('/order/orderfailure', failure);
 router.get('/order/orderpending', pending);
 
-router.post('/webhoock', webhoock);
+router.post('/webhook', receiveWebhook);
 
 // router
 //   .route('/product/:slug')
