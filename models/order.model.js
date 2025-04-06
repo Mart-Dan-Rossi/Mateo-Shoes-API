@@ -42,18 +42,23 @@ const beOrderSchema = new mongoose.Schema(
       name: { type: String, required: true },
       id: { type: String, required: true },
       email: { type: String, required: true },
+      phone: { type: String, required: true },
     },
-    name: {
+    MPUserName: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, 'Name is required'],
     },
-    phone: {
+    MPmail: {
       type: String,
-      required: [true, "Number is required"],
+      required: [true, 'Phone is required'],
     },
-    mail: {
+    status: {
       type: String,
-      required: [true, "Phone is required"],
+      required: [true, 'Status is required'],
+    },
+    statusDetail: {
+      type: String,
+      required: [true, 'Status detail is required'],
     },
     products: [
       {
@@ -78,4 +83,3 @@ const beOrderSchema = new mongoose.Schema(
 const BEOrder = mongoose.model('orders', beOrderSchema);
 
 module.exports = BEOrder;
-

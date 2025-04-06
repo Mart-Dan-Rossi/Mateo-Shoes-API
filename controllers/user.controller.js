@@ -30,6 +30,14 @@ const getUser = async (req, res, next) => {
   }
 };
 
+const findUserById = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+  return user;
+};
+
 const createUser = async (req, res, next) => {
   try {
     // Validate data
@@ -297,6 +305,7 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
 
 module.exports = {
   getUser,
+  findUserById,
   createUser,
   loginUser,
   forgotPassword,

@@ -1,6 +1,10 @@
 const mercadopago = require('mercadopago');
 const MPOrder = require('../models/order.model');
 
+const { ErrorHandler } = require('../utils/errorHandler');
+const { findUserById } = require('./user.controller');
+const { releaseReservations } = require('./product.controller');
+
 mercadopago.configure({
   access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN,
 });
@@ -11,12 +15,12 @@ const createOrder = async (req, res) => {
       items: req.body.cartItems,
       back_urls: {
         success: 'http://localhost:3000/pay/success',
-        failure: 'http://localhost:3000/pay/failure',
+        failure: 'http://localhost:3000/pay/fail',
         pending: 'http://localhost:3000/pay/pending',
       },
       auto_return: 'approved',
       notification_url:
-        'https://c089-2800-21c5-c000-343-2de6-272c-bd77-2dc4.ngrok-free.app/api/webhook',
+        'https://6a42-2800-21c5-c000-343-c5a0-7530-3ec0-e136.ngrok-free.app/api/webhook',
       metadata: { ...req.body.metadata, products: req.body.cartItems },
     };
 
@@ -44,30 +48,50 @@ const pending = (req, res) => res.send('pay/pending');
 
 const receiveWebhook = async (req, res) => {
   const payment = req.query;
-  console.log('receiveWebhook', req);
 
-  // try {
-  //   if (payment.type === 'payment') {
-  //     const data = await mercadopago.payment.findById(payment['data.id']);
+  try {
+    if (payment.type === 'payment') {
+      const data = await mercadopago.payment.findById(payment['data.id']);
 
-  //     console.log('data: ', data);
+      console.log('BODY:', data.body);
+      console.log('STATUS:', data.body.status);
 
-  //     const order = await MPOrder.create({
-  //       // user: data.metadata.user,
-  //       name: `${data.payer.first_name} ${data.payer.last_name}`,
-  //       phone: data.payer.phone,
-  //       // products: data.metadata.products,
-  //     });
+      const MSUserId = data.response.metadata.user_id;
 
-  //     console.log('New order incoming!:', order);
-  //     console.log(data);
-  //   }
+      const MSUser = await findUserById(MSUserId);
 
-  //   res.sendStatus(204);
-  // } catch (error) {
-  //   console.log('webhoock error: ', error);
-  //   return res.sendStatus(500).json({ error: error.message });
-  // }
+      if (!MSUser) {
+        console.log('MSUser not found');
+        throw new ErrorHandler(404, 'Usuario no encontrado');
+      }
+
+      const order = new MPOrder({
+        user: {
+          name: MSUser.fullName,
+          id: MSUserId,
+          email: MSUser.email,
+          phone: MSUser.phoneNumber,
+        },
+        MPUserName: `${data.response.payer.first_name} ${data.response.payer.last_name}`,
+        MPmail: data.response.payer.email,
+        status: data.body.status,
+        statusDetail: data.body.status_detail,
+        products: data.response.metadata.products,
+      });
+
+      await order.save();
+
+      await releaseReservations({
+        slugs: data.response.metadata.products.map((p) => p.slug),
+        userId: MSUserId,
+      });
+
+      res.sendStatus(204);
+    }
+  } catch (err) {
+    console.log('Webhook error:', err);
+    return res.sendStatus(500).json({ error: err.message });
+  }
 };
 
 module.exports = {
