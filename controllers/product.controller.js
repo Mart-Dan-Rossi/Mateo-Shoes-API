@@ -53,11 +53,12 @@ const createProduct = async (req, res) => {
     const product = new Product(req.body);
     await product.save();
 
-    res.json({ message: 'Producto agregado a favoritos.' });
+    res.json({ message: 'Producto agregado.' });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'Un error ha ocurrido agregando a favoritos.' });
+    res.status(500).json({
+      error: 'Un error ha ocurrido agregando el producto.',
+      details: error.message,
+    });
   }
 };
 
@@ -300,9 +301,8 @@ const releaseReservations = async ({ slugs, userId }) => {
     let modified = false;
     const updatedSizeOptions = [...product.sizeOptions];
 
-    const userReservations = product.reservedData?.filter(
-      (res) => res.userId === userId
-    ) || [];
+    const userReservations =
+      product.reservedData?.filter((res) => res.userId === userId) || [];
 
     for (const reservation of userReservations) {
       const matchIndex = updatedSizeOptions.findIndex(

@@ -36,7 +36,7 @@ const productSchema = new mongoose.Schema(
     },
     brand: {
       type: String,
-      enum: ['puma', 'nike', 'adidas', 'underArmour', 'other'],
+      enum: ['puma', 'nike', 'adidas', 'underarmour', 'other'],
       required: [true, 'Debe haber una opción de marca.'],
     },
     desc: {
