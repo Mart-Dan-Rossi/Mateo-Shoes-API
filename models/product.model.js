@@ -1,8 +1,30 @@
-const { required, string } = require('joi');
 const mongoose = require('mongoose');
+
+const availableColors = [
+  'negro',
+  'blanco',
+  'gris',
+  'azul',
+  'rojo',
+  'amarillo',
+  'verde',
+  'violeta',
+  'naranja',
+  'rosa',
+  'celeste',
+];
 
 const productSchema = new mongoose.Schema(
   {
+    productType: {
+      type: String,
+      enum: {
+        values: ['indumentaria', 'calzado'],
+        message: 'Color inválido',
+      },
+      required: [true, 'Nombre requerido. No puede repetirse.'],
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, 'Nombre requerido. No puede repetirse.'],
@@ -25,7 +47,14 @@ const productSchema = new mongoose.Schema(
       type: [
         {
           usSize: { type: Number, required: [true, 'Talle US es requerido'] },
-          color: { type: String, required: [true, 'Color requerido'] },
+          color: {
+            type: String,
+            enum: {
+              values: availableColors,
+              message: 'Color inválido',
+            },
+            required: [true, 'Color requerido'],
+          },
           quantity: { type: Number, required: [true, 'Cantidad requerida'] },
           arg: { type: Number },
           cm: { type: Number },

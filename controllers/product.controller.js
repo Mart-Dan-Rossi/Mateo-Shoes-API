@@ -65,13 +65,23 @@ const createProduct = async (req, res) => {
 // Update a particular product
 const updateProduct = async (req, res, next) => {
   try {
-    const { name, slug, images, price, sizeOptions, desc, tags, brand } =
-      req.body;
+    const {
+      productType,
+      name,
+      slug,
+      images,
+      price,
+      sizeOptions,
+      desc,
+      tags,
+      brand,
+    } = req.body;
 
     const product = await Product.findOne({ slug });
 
     if (!product) throw new ErrorHandler(404, 'El producto no existe');
 
+    product.productType = productType;
     product.name = name;
     product.slug = slug;
     product.images = images;
@@ -88,6 +98,7 @@ const updateProduct = async (req, res, next) => {
 
     res.json({ message: 'Producto modificado exitosamente.' });
   } catch (error) {
+    console.log('Error modifying product:', error);
     res
       .status(500)
       .json({ error: 'Un error ha ocurrido modificando producto.' });
