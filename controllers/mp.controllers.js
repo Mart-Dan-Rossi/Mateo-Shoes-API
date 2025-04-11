@@ -16,7 +16,7 @@ const createOrder = async (req, res) => {
       back_urls: {
         success: 'http://localhost:3000/pay/success',
         failure: 'http://localhost:3000/pay/fail',
-        pending: 'http://localhost:3000/pay/pending',
+        pending: 'http://localhost:3000/pay/success',
       },
       auto_return: 'approved',
       notification_url:

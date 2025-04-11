@@ -32,6 +32,16 @@ const registerUserSchema = Joi.object()
         'any.required': `"contraseña" es un campo requerido`,
         'string.pattern.base': `"contraseña" debería tener un mínimo de ocho caracteres, una mayúscula y un número`,
       }),
+      
+      passwordVerification: Joi.string()
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$'))
+        .required()
+        .messages({
+          'string.base': `"Repita contraseña" debería ser un texto`,
+          'string.empty': `"Repita contraseña" no puede ser un campo vacío`,
+          'any.required': `"Repita contraseña" es un campo requerido`,
+          'string.pattern.base': `"Repita contraseña" debería tener un mínimo de ocho caracteres, una mayúscula y un número`,
+        }),
 
     confirm_password: Joi.ref('contraseña'),
   });
@@ -68,7 +78,7 @@ const forgotPasswordSchema = Joi.object()
     }),
   });
 
-const resetPasswordSchema = Joi.object()
+const editProductSchema = Joi.object()
   .options({ abortEarly: false })
   .keys({
     password: Joi.string()
@@ -86,5 +96,5 @@ module.exports = {
   registerUserSchema,
   loginUserSchema,
   forgotPasswordSchema,
-  resetPasswordSchema,
+  editProductSchema,
 };

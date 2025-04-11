@@ -3,7 +3,7 @@ const {
   registerUserSchema,
   loginUserSchema,
   forgotPasswordSchema,
-  resetPasswordSchema,
+  editProductSchema,
 } = require('../validations/user.validation');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -45,6 +45,12 @@ const createUser = async (req, res, next) => {
     const { error } = await registerUserSchema.validateAsync(data);
     if (error) throw new ErrorHandler(400, error.message);
 
+    if (data.password !== data.passwordVerification)
+      throw new ErrorHandler(
+        400,
+        'La contraseña y su verificación no coinciden'
+      );
+
     // Verify if email exist
     data.email = data.email.toLowerCase();
 
@@ -64,29 +70,28 @@ const createUser = async (req, res, next) => {
     user = await User.create(data);
 
     // Generate token for access
-    const verificationToken = jwt.sign(
-      { sub: user._id },
-      process.env.JWT_TOKEN,
-      {
-        expiresIn: '10m',
-      }
-    );
+    // const verificationToken = jwt.sign(
+    //   { sub: user._id },
+    //   process.env.JWT_TOKEN,
+    //   {
+    //     expiresIn: '10m',
+    //   }
+    // );
 
-    const verificationLink = `${process.env.FRONTEND_REDIRECT}/auth/verify-email?token=${verificationToken}&email=${data.email}`;
+    // const verificationLink = `${process.env.FRONTEND_REDIRECT}/auth/verify-email?token=${verificationToken}&email=${data.email}`;
 
-    // Send verification email
-    const sendEmailResult = await sendEmail(data.email, '', verificationLink);
+    // // Send verification email
+    // const sendEmailResult = await sendEmail(data.email, '', verificationLink);
 
-    if (!sendEmailResult) {
-      throw new ErrorHandler(500, 'Fallo al enviar el mail');
-    }
+    // if (!sendEmailResult) {
+    //   throw new ErrorHandler(500, 'Fallo al enviar el mail');
+    // }
     const userJson = user.toJSON();
     delete userJson.password;
 
     res.status(201).json({
       status: 'success',
-      message:
-        'Usuario registrado exitosamente. Un mail de verificación ha sido enviado.',
+      message: 'Usuario registrado exitosamente.',
       data: userJson,
     });
   } catch (error) {
@@ -152,7 +157,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const secretKey = process.env.JWT_TOKEN;
-    const token = jwt.sign({ sub: user._id }, secretKey, { expiresIn: '1h' });
+    const token = jwt.sign({ sub: user._id }, secretKey);
 
     const resetPasswordLink = `${process.env.FRONTEND_REDIRECT}/auth/reset-password?code=${token}`;
 
@@ -178,24 +183,28 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-const resetPassword = async (req, res) => {
+const editProfile = async (req, res) => {
   try {
-    const { resetToken, newPassword } = req.body;
+    const {
+      fullName,
+      phoneNumber,
+      email,
+      newPassword,
+      userId,
+      passwordVerification,
+    } = req.body;
 
-    // Validate newPassword
-    const { error } = await resetPasswordSchema.validateAsync({
+    const { error } = await registerUserSchema.validateAsync({
       password: newPassword,
+      passwordVerification,
+      fullName,
+      phoneNumber,
+      email,
     });
     if (error) {
       throw new ErrorHandler(400, error.message);
     }
 
-    // Verify the reset token
-    const secretKey = process.env.JWT_TOKEN;
-    const decodedToken = jwt.verify(resetToken, secretKey);
-    const userId = decodedToken.sub;
-
-    // Update user's password
     const user = await User.findOne({ _id: userId });
 
     if (!user) {
@@ -207,9 +216,13 @@ const resetPassword = async (req, res) => {
     // Update user's password
     const salt = await bcrypt.genSalt(8);
     user.password = await bcrypt.hash(newPassword, salt);
+    user.fullName = fullName;
+    user.phoneNumber = phoneNumber;
+    user.email = email;
+
     await user.save();
 
-    res.json({ message: 'Cambio de contraseña exitoso', status: 'success' });
+    res.json({ message: 'Edición exitosa', status: 'success' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ha ocurrido un error' });
@@ -309,6 +322,6 @@ module.exports = {
   createUser,
   loginUser,
   forgotPassword,
-  resetPassword,
+  editProfile,
   verifyToken,
 };
