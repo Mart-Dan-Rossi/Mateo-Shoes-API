@@ -53,15 +53,11 @@ const receiveWebhook = async (req, res) => {
     if (payment.type === 'payment') {
       const data = await mercadopago.payment.findById(payment['data.id']);
 
-      console.log('BODY:', data.body);
-      console.log('STATUS:', data.body.status);
-
       const MSUserId = data.response.metadata.user_id;
 
       const MSUser = await findUserById(MSUserId);
 
       if (!MSUser) {
-        console.log('MSUser not found');
         throw new ErrorHandler(404, 'Usuario no encontrado');
       }
 

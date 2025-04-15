@@ -20,10 +20,9 @@ const productSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: ['indumentaria', 'calzado'],
-        message: 'Color inválido',
+        message: 'Tipo de producto inválido',
       },
       required: [true, 'Nombre requerido. No puede repetirse.'],
-      unique: true,
     },
     name: {
       type: String,

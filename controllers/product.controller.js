@@ -3,7 +3,6 @@ const { ErrorHandler } = require('../utils/errorHandler');
 
 // Welcome
 const welcomePage = (req, res, next) => {
-  console.log('a');
   try {
     res.send(
       'Hey buddy! Feel free to create stuffs with this API. Try /products to get all products.'
