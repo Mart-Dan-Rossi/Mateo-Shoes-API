@@ -20,8 +20,11 @@ const createOrder = async (req, res) => {
       },
       auto_return: 'approved',
       notification_url:
-        'https://6a42-2800-21c5-c000-343-c5a0-7530-3ec0-e136.ngrok-free.app/api/webhook',
-      metadata: { ...req.body.metadata, products: req.body.cartItems },
+        'https://0125-2800-21c5-c000-7ac-c4a1-5fa5-b095-dfc5.ngrok-free.app/api/webhook',
+      metadata: {
+        ...req.body.metadata,
+        products: JSON.stringify(req.body.metadata.products),
+      },
     };
 
     mercadopago.preferences
@@ -52,6 +55,7 @@ const receiveWebhook = async (req, res) => {
   try {
     if (payment.type === 'payment') {
       const data = await mercadopago.payment.findById(payment['data.id']);
+      console.log('payment data: ', data);
 
       const MSUserId = data.response.metadata.user_id;
 
@@ -61,28 +65,44 @@ const receiveWebhook = async (req, res) => {
         throw new ErrorHandler(404, 'Usuario no encontrado');
       }
 
-      const order = new MPOrder({
-        user: {
-          name: MSUser.fullName,
-          id: MSUserId,
-          email: MSUser.email,
-          phone: MSUser.phoneNumber,
-        },
-        MPUserName: `${data.response.payer.first_name} ${data.response.payer.last_name}`,
-        MPmail: data.response.payer.email,
-        status: data.body.status,
-        statusDetail: data.body.status_detail,
-        products: data.response.metadata.products,
-      });
+      const parsedProducts = JSON.parse(data.body.metadata.products);
+      if (parsedProducts.length > 0) {
+        const order = new MPOrder({
+          user: {
+            name: MSUser.fullName,
+            id: MSUserId,
+            email: MSUser.email,
+            phone: MSUser.phoneNumber,
+          },
+          MPUserName: `${data.response.payer.first_name} ${data.response.payer.last_name}`,
+          MPmail: data.response.payer.email,
+          status: data.body.status,
+          statusDetail: data.body.status_detail,
+          products: parsedProducts.map(({ id, name, price, sizeOptions }) => {
+            const orderSizeOptions = sizeOptions.map((sizeOption) => {
+              const { usSize, color, quantity } = sizeOption;
 
-      await order.save();
+              return { usSize, color, quantity };
+            });
 
-      await releaseReservations({
-        slugs: data.response.metadata.products.map((p) => p.slug),
-        userId: MSUserId,
-      });
+            return {
+              id,
+              name,
+              price,
+              sizeOptions: orderSizeOptions,
+            };
+          }),
+        });
 
-      res.sendStatus(204);
+        await order.save();
+
+        await releaseReservations({
+          slugs: parsedProducts.map((p) => p.slug),
+          userId: MSUserId,
+        });
+
+        res.sendStatus(204);
+      }
     }
   } catch (err) {
     console.log('Webhook error:', err);

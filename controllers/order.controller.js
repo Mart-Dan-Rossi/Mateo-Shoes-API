@@ -40,17 +40,20 @@ const updateBEOrder = async (req, res) => {
 
     if (data.products && Array.isArray(data.products)) {
       order.products = data.products.map((product) => ({
-        id: product.id,
+        _id: product._id,
         name: product.name,
         price: product.price,
-        sizeOption:
-          product.sizeOption && typeof product.sizeOption === 'object'
-            ? {
-                usSize: product.sizeOption.usSize || null,
-                color: product.sizeOption.color || null,
-                quantity: product.sizeOption.quantity || 0,
-              }
-            : null,
+        sizeOptions:
+          product.sizeOptions &&
+          product.sizeOptions.map((sizeOption) => {
+            return typeof sizeOption === 'object'
+              ? {
+                  usSize: sizeOption.usSize || null,
+                  color: sizeOption.color || null,
+                  quantity: sizeOption.quantity || 0,
+                }
+              : null;
+          }),
       }));
     }
 

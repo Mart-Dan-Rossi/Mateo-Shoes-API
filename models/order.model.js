@@ -65,11 +65,11 @@ const beOrderSchema = new mongoose.Schema(
         id: { type: String, required: false },
         name: { type: String, required: false },
         price: { type: String, required: false },
-        sizeOption: {
+        sizeOptions: [{
           usSize: { type: Number },
           color: { type: String },
           quantity: { type: Number },
-        },
+        }],
       },
     ],
     isDelivered: {
