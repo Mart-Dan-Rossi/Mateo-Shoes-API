@@ -49,6 +49,7 @@ const getParticularProduct = async (req, res, next) => {
 
 const createProduct = async (req, res) => {
   try {
+    console.log('req.body: ', req.body);
     const product = new Product(req.body);
     await product.save();
 
@@ -146,18 +147,23 @@ const reserveStock = async (req, res) => {
         JSON.stringify(product.reservedData)
       );
 
-      const matchingSizeOption = product.sizeOptions.find(
-        (sizeOption) =>
+      const matchingSizeOption = product.sizeOptions.find((sizeOption) => {
+        return (
           sizeOption.usSize === reservedData.usSize &&
           sizeOption.color.toLowerCase() === reservedData.color.toLowerCase()
-      );
+        );
+      });
 
       if (
         !matchingSizeOption ||
         matchingSizeOption.quantity < reservedData.quantity
       ) {
         throw new Error(
-          `Producto talle ${reservedData.usSize}US, color ${reservedData.color} y de ID ${id} no tiene suficiente stock.`
+          `Producto talle ${reservedData.usSize}${
+            typeof reservedData.usSize === 'number' && 'US'
+          }, color ${
+            reservedData.color
+          } y de ID ${id} no tiene suficiente stock.`
         );
       }
 

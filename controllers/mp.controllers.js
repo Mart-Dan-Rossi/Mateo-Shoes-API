@@ -20,7 +20,7 @@ const createOrder = async (req, res) => {
       },
       auto_return: 'approved',
       notification_url:
-        'https://0125-2800-21c5-c000-7ac-c4a1-5fa5-b095-dfc5.ngrok-free.app/api/webhook',
+        'https://9b15-2800-21c5-c000-7ac-bcbe-e2f-ee8a-437f.ngrok-free.app/api/webhook',
       metadata: {
         ...req.body.metadata,
         products: JSON.stringify(req.body.metadata.products),

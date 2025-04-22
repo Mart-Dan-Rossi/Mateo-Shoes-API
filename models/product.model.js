@@ -14,6 +14,8 @@ const availableColors = [
   'celeste',
 ];
 
+const clothSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
 const productSchema = new mongoose.Schema(
   {
     productType: {
@@ -45,7 +47,17 @@ const productSchema = new mongoose.Schema(
     sizeOptions: {
       type: [
         {
-          usSize: { type: Number, required: [true, 'Talle US es requerido'] },
+          usSize: {
+            type: mongoose.Schema.Types.Mixed,
+            validate: {
+              validator: function (v) {
+                return typeof v === 'number' || clothSizes.includes(v);
+              },
+              message:
+                'Talle inválido (debe ser número o un talle de ropa válido)',
+            },
+            required: [true, 'Talle US es requerido'],
+          },
           color: {
             type: String,
             enum: {
@@ -82,7 +94,17 @@ const productSchema = new mongoose.Schema(
     reservedData: {
       type: [
         {
-          usSize: { type: Number, required: [true, 'Talle US es requerido'] },
+          usSize: {
+            type: mongoose.Schema.Types.Mixed,
+            validate: {
+              validator: function (v) {
+                return typeof v === 'number' || clothSizes.includes(v);
+              },
+              message:
+                'Talle inválido (debe ser número o un talle de ropa válido)',
+            },
+            required: [true, 'Talle US es requerido'],
+          },
           color: { type: String, required: [true, 'Color requerido'] },
           quantity: { type: Number, required: [true, 'Cantidad requerida'] },
           userId: { type: String, required: [true, 'userId is required'] },
