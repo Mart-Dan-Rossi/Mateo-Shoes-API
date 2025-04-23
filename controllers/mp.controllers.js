@@ -14,13 +14,13 @@ const createOrder = async (req, res) => {
     let preference = {
       items: req.body.cartItems,
       back_urls: {
-        success: 'http://localhost:3000/pay/success',
-        failure: 'http://localhost:3000/pay/fail',
-        pending: 'http://localhost:3000/pay/success',
+        success: 'https://8a19-2800-21c5-c000-7ac-542d-2ca2-ac83-6154.ngrok-free.app/pay/success',
+        failure: 'https://8a19-2800-21c5-c000-7ac-542d-2ca2-ac83-6154.ngrok-free.app/pay/fail',
+        pending: 'https://8a19-2800-21c5-c000-7ac-542d-2ca2-ac83-6154.ngrok-free.app/pay/success',
       },
       auto_return: 'approved',
       notification_url:
-        'https://9b15-2800-21c5-c000-7ac-bcbe-e2f-ee8a-437f.ngrok-free.app/api/webhook',
+        'https://8a19-2800-21c5-c000-7ac-542d-2ca2-ac83-6154.ngrok-free.app/api/webhook',
       metadata: {
         ...req.body.metadata,
         products: JSON.stringify(req.body.metadata.products),

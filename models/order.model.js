@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const clothSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+
 const mpOrderSchema = new mongoose.Schema(
   {
     user: {
@@ -65,11 +67,23 @@ const beOrderSchema = new mongoose.Schema(
         id: { type: String, required: false },
         name: { type: String, required: false },
         price: { type: String, required: false },
-        sizeOptions: [{
-          usSize: { type: Number },
-          color: { type: String },
-          quantity: { type: Number },
-        }],
+        sizeOptions: [
+          {
+            usSize: {
+              type: mongoose.Schema.Types.Mixed,
+              validate: {
+                validator: function (v) {
+                  return typeof v === 'number' || clothSizes.includes(v);
+                },
+                message:
+                  'Talle inválido (debe ser número o un talle de ropa válido)',
+              },
+              required: [true, 'Talle US es requerido'],
+            },
+            color: { type: String },
+            quantity: { type: Number },
+          },
+        ],
       },
     ],
     isDelivered: {
