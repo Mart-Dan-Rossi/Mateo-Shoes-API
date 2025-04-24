@@ -37,8 +37,23 @@ const productSchema = new mongoose.Schema(
       unique: true,
     },
     images: {
-      type: [String],
-      required: [true, 'Debe haber por lo menos una imágen.'],
+      type: new mongoose.Schema(
+        {
+          negro: { type: [String], default: [] },
+          blanco: { type: [String], default: [] },
+          gris: { type: [String], default: [] },
+          azul: { type: [String], default: [] },
+          rojo: { type: [String], default: [] },
+          amarillo: { type: [String], default: [] },
+          verde: { type: [String], default: [] },
+          violeta: { type: [String], default: [] },
+          naranja: { type: [String], default: [] },
+          rosa: { type: [String], default: [] },
+          celeste: { type: [String], default: [] },
+        },
+        { _id: false }
+      ),
+      required: [true, 'Debe haber al menos un color con imágenes.'],
     },
     price: {
       type: Number,
