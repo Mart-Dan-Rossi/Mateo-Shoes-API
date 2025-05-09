@@ -4,7 +4,11 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+app.use(
+  cors(/*{
+  origin: 'http://www.mateosshooes.com'
+}*/)
+);
 
 const routeRouter = require('./routes/route');
 const userRoute = require('./routes/user.route');
