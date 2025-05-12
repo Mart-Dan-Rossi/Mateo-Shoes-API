@@ -103,8 +103,6 @@ const loginUser = async (req, res, next) => {
   try {
     // Validate data
     const data = req.body;
-    const { error } = await loginUserSchema.validateAsync(data);
-    if (error) throw new ErrorHandler(400, error.message);
 
     // Verify email and password
     const user = await User.findOne({ email: data.email.toLowerCase() });
@@ -114,6 +112,9 @@ const loginUser = async (req, res, next) => {
         400,
         'Usuario no encontrado. No hay cuenta asociada a este mail. Por favor ve a la página de registro para crear una nueva cuenta.'
       );
+      
+    const { error } = await loginUserSchema.validateAsync(data);
+    if (error) throw new ErrorHandler(400, error.message);
 
     const validatePassword = await bcrypt.compare(data.password, user.password);
     if (!validatePassword)
