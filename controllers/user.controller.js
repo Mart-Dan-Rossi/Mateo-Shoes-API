@@ -124,7 +124,7 @@ const loginUser = async (req, res, next) => {
       );
 
     // Generate token for access
-    const token = jwt.sign({ sub: user._id }, process.env.JWT_TOKEN);
+    const token = jwt.sign({ sub: user._id, role: user.role }, process.env.JWT_TOKEN);
 
     res.status(200).json({
       status: 'success',

@@ -1,3 +1,4 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
@@ -27,6 +28,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    role: {
+      type: String,
+      required: false,
+    }
   },
   { timestamps: true }
 );
