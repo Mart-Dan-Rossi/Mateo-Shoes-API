@@ -49,7 +49,6 @@ const getParticularProduct = async (req, res, next) => {
 
 const createProduct = async (req, res) => {
   try {
-    console.log('req.body: ', req.body);
     const product = new Product(req.body);
     await product.save();
 
@@ -124,6 +123,12 @@ const updateMultipleProducts = async (req, res, next) => {
   }
 };
 
+const isReservationOnTime = (reserve) => {
+  const reservationDurationTimestamp = 5 * 60 * 60 * 1000; // 60*60*1000 = 1 hs
+
+  return Date.now() < reserve.timestamp + reservationDurationTimestamp;
+};
+
 const reserveStock = async (req, res) => {
   let updatedProducts = [];
 
@@ -143,9 +148,25 @@ const reserveStock = async (req, res) => {
       }
 
       let originalSizeOptions = JSON.parse(JSON.stringify(product.sizeOptions));
-      let originalReservedData = JSON.parse(
-        JSON.stringify(product.reservedData)
+      let validOriginalReservedData = JSON.parse(
+        JSON.stringify(
+          product.reservedData.filter((rvdDta) => {
+            return isReservationOnTime(rvdDta);
+          })
+        )
       );
+
+      const validOriginalReservationAmount = validOriginalReservedData
+        .filter((validOriginalReservation) => {
+          return (
+            validOriginalReservation.usSize === reservedData.usSize &&
+            validOriginalReservation.color.toLowerCase() ===
+              reservedData.color.toLowerCase()
+          );
+        })
+        .reduce((acumu, current) => {
+          return acumu + current.quantity;
+        }, 0);
 
       const matchingSizeOption = product.sizeOptions.find((sizeOption) => {
         return (
@@ -156,34 +177,34 @@ const reserveStock = async (req, res) => {
 
       if (
         !matchingSizeOption ||
-        matchingSizeOption.quantity < reservedData.quantity
+        matchingSizeOption.quantity <
+          reservedData.quantity + validOriginalReservationAmount
       ) {
         throw new Error(
-          `Producto talle ${reservedData.usSize}${
+          `Sin stock de ${product.name} talle ${reservedData.usSize}${
             typeof reservedData.usSize === 'number' && 'US'
-          }, color ${
-            reservedData.color
-          } y de ID ${id} no tiene suficiente stock.`
+          }, color ${reservedData.color}`
         );
       }
-
-      matchingSizeOption.quantity -= reservedData.quantity;
 
       const existingReservation = product.reservedData.find(
         (res) =>
           res.usSize === reservedData.usSize &&
           res.color.toLowerCase() === reservedData.color.toLowerCase() &&
-          res.userId === userId
+          res.userId === userId &&
+          isReservationOnTime(res)
       );
 
       if (existingReservation) {
         existingReservation.quantity += reservedData.quantity;
+        existingReservation.timestamp = Date.now();
       } else {
         product.reservedData.push({
           usSize: reservedData.usSize,
           color: reservedData.color,
           quantity: reservedData.quantity,
           userId: userId,
+          timestamp: Date.now(),
         });
       }
 
@@ -191,7 +212,7 @@ const reserveStock = async (req, res) => {
       updatedProducts.push({
         product,
         originalSizeOptions,
-        originalReservedData,
+        validOriginalReservedData,
       });
     }
 
@@ -201,15 +222,13 @@ const reserveStock = async (req, res) => {
         'Reservas completadas exitosamente. Por favor completa el pago o comunicate con nosotros para continuar.',
     });
   } catch (error) {
-    console.error('Error en la reserva:', error);
-
     for (const {
       product,
       originalSizeOptions,
-      originalReservedData,
+      validOriginalReservedData,
     } of updatedProducts) {
       product.sizeOptions = originalSizeOptions;
-      product.reservedData = originalReservedData;
+      product.reservedData = validOriginalReservedData;
       await product.save();
     }
 

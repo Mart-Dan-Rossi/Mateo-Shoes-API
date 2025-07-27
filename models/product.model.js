@@ -124,6 +124,7 @@ const productSchema = new mongoose.Schema(
           quantity: { type: Number, required: [true, 'Cantidad requerida'] },
           userId: { type: String, required: [true, 'userId is required'] },
           hide: { type: Boolean, required: false },
+          timestamp: { type: Number, required: false },
         },
       ],
       required: false,
