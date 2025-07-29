@@ -141,11 +141,20 @@ const reserveStock = async (req, res) => {
         .json({ message: 'Lista de actualizaciones inválida' });
     }
 
-    for (const { id, reservedData, userId } of updates) {
-      const product = await Product.findById(id);
+    for (const {
+      id: updateId,
+      reservedData: updateReservedData,
+      userId: updateUserId,
+    } of updates) {
+      const product = await Product.findById(updateId);
       if (!product) {
-        throw new Error(`Producto con ID ${id} no encontrado.`);
+        throw new Error(`Producto con ID ${updateId} no encontrado.`);
       }
+
+      // Remove previous user reservations.
+      product.reservedData = product.reservedData.filter(
+        (rD) => rD.userId !== updateUserId
+      );
 
       let originalSizeOptions = JSON.parse(JSON.stringify(product.sizeOptions));
       let validOriginalReservedData = JSON.parse(
@@ -159,9 +168,9 @@ const reserveStock = async (req, res) => {
       const validOriginalReservationAmount = validOriginalReservedData
         .filter((validOriginalReservation) => {
           return (
-            validOriginalReservation.usSize === reservedData.usSize &&
+            validOriginalReservation.usSize === updateReservedData.usSize &&
             validOriginalReservation.color.toLowerCase() ===
-              reservedData.color.toLowerCase()
+              updateReservedData.color.toLowerCase()
           );
         })
         .reduce((acumu, current) => {
@@ -170,43 +179,31 @@ const reserveStock = async (req, res) => {
 
       const matchingSizeOption = product.sizeOptions.find((sizeOption) => {
         return (
-          sizeOption.usSize === reservedData.usSize &&
-          sizeOption.color.toLowerCase() === reservedData.color.toLowerCase()
+          sizeOption.usSize === updateReservedData.usSize &&
+          sizeOption.color.toLowerCase() ===
+            updateReservedData.color.toLowerCase()
         );
       });
 
       if (
         !matchingSizeOption ||
         matchingSizeOption.quantity <
-          reservedData.quantity + validOriginalReservationAmount
+          updateReservedData.quantity + validOriginalReservationAmount
       ) {
         throw new Error(
-          `Sin stock de ${product.name} talle ${reservedData.usSize}${
-            typeof reservedData.usSize === 'number' && 'US'
-          }, color ${reservedData.color}`
+          `Sin stock de ${product.name} talle ${updateReservedData.usSize}${
+            typeof updateReservedData.usSize === 'number' && 'US'
+          }, color ${updateReservedData.color}`
         );
       }
 
-      const existingReservation = product.reservedData.find(
-        (res) =>
-          res.usSize === reservedData.usSize &&
-          res.color.toLowerCase() === reservedData.color.toLowerCase() &&
-          res.userId === userId &&
-          isReservationOnTime(res)
-      );
-
-      if (existingReservation) {
-        existingReservation.quantity += reservedData.quantity;
-        existingReservation.timestamp = Date.now();
-      } else {
-        product.reservedData.push({
-          usSize: reservedData.usSize,
-          color: reservedData.color,
-          quantity: reservedData.quantity,
-          userId: userId,
-          timestamp: Date.now(),
-        });
-      }
+      product.reservedData.push({
+        usSize: updateReservedData.usSize,
+        color: updateReservedData.color,
+        quantity: updateReservedData.quantity,
+        userId: updateUserId,
+        timestamp: Date.now(),
+      });
 
       await product.save();
       updatedProducts.push({
