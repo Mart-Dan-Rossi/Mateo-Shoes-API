@@ -379,11 +379,11 @@ const cancelReservation = async (req, res) => {
     }
 
     product.reservedData = product.reservedData.filter((rD) => {
-      return (
-        rD.userId !== userId ||
-        (rD.usSize.toString().toLowerCase() !==
+      return !(
+        rD.userId !== userId &&
+        rD.usSize.toString().toLowerCase() !==
           usSize.toString().toLowerCase() &&
-          rD.color.toLowerCase() !== color.toLowerCase())
+        rD.color.toLowerCase() !== color.toLowerCase()
       );
     });
 
