@@ -97,7 +97,6 @@ const updateProduct = async (req, res, next) => {
 
     res.json({ message: 'Producto modificado exitosamente.' });
   } catch (error) {
-    console.log('Error modifying product:', error);
     res
       .status(500)
       .json({ error: 'Un error ha ocurrido modificando producto.' });
@@ -151,10 +150,14 @@ const reserveStock = async (req, res) => {
         throw new Error(`Producto con ID ${updateId} no encontrado.`);
       }
 
-      // Remove previous user reservations.
-      product.reservedData = product.reservedData.filter(
-        (rD) => rD.userId !== updateUserId
-      );
+      // Remove previous user reservations of this product, size and color.
+      product.reservedData = product.reservedData.filter((pRD) => {
+        return !(
+          pRD.color === updateReservedData.color &&
+          pRD.usSize === updateReservedData.usSize &&
+          pRD.userId === updateUserId
+        );
+      });
 
       let originalSizeOptions = JSON.parse(JSON.stringify(product.sizeOptions));
       let validOriginalReservedData = JSON.parse(
@@ -358,12 +361,43 @@ const releaseReservations = async ({ slugs, userId }) => {
       (res) => res.userId !== userId
     );
 
-    if (updatedSizeOptions.length === 0) {
-      await Product.deleteOne({ _id: product._id });
-    } else if (modified) {
+    if (updatedSizeOptions.length !== 0 && modified) {
       product.sizeOptions = updatedSizeOptions;
       await product.save();
     }
+  }
+};
+
+const cancelReservation = async (req, res) => {
+  try {
+    const { slug, userId, usSize, color } = req.body;
+
+    const product = await Product.findOne({ slug });
+
+    if (!product) {
+      throw new Error(`Producto de slug: ${slug} no encotnrado`);
+    }
+
+    product.reservedData = product.reservedData.filter((rD) => {
+      return (
+        rD.userId !== userId ||
+        (rD.usSize.toString().toLowerCase() !==
+          usSize.toString().toLowerCase() &&
+          rD.color.toLowerCase() !== color.toLowerCase())
+      );
+    });
+
+    await product.save();
+
+    res.json({
+      status: 'completed',
+      message: 'Reserva cancelada exitosamente.',
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error al cancelar reserva.',
+      error: error.message,
+    });
   }
 };
 
@@ -379,4 +413,5 @@ module.exports = {
   deleteProduct,
   searchProduct,
   releaseReservations,
+  cancelReservation,
 };

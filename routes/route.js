@@ -16,6 +16,7 @@ const {
   updateMultipleProducts,
   reserveStock,
   hideUserReservations,
+  cancelReservation,
 } = require('../controllers/product.controller');
 
 const { isLoggedIn } = require('../middlewares/auth');
@@ -59,6 +60,7 @@ router.post('/product/updateMultiple', updateMultipleProducts);
 
 router.post('/products/reserveProducts', reserveStock);
 router.post('/products/hideUserReservations', hideUserReservations);
+router.post('/products/cancelReservation', cancelReservation);
 
 router.post('/favorite/add', addFavorite);
 router.delete('/favorite/remove', removeFavorite);
