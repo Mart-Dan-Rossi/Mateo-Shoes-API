@@ -17,6 +17,7 @@ const {
   reserveStock,
   hideUserReservations,
   cancelReservation,
+  manualPurchaseHanlding,
 } = require('../controllers/product.controller');
 
 const { isLoggedIn } = require('../middlewares/auth');
@@ -62,9 +63,7 @@ router.post('/products/reserveProducts', reserveStock);
 router.post('/products/hideUserReservations', hideUserReservations);
 router.post('/products/cancelReservation', cancelReservation);
 
-router.post('/favorite/add', addFavorite);
-router.delete('/favorite/remove', removeFavorite);
-router.get('/favorite/my-favorites', isLoggedIn, getMyFavoriteProducts);
+router.post('/products/manualPurchaseHanlding', manualPurchaseHanlding);
 
 router.route('/order').get(getAllOrdersList);
 router.post('/order/add', createBEOrder);
@@ -76,6 +75,10 @@ router.get('/order/orderfailure', failure);
 router.get('/order/orderpending', pending);
 
 router.post('/webhook', receiveWebhook);
+
+router.post('/favorite/add', addFavorite);
+router.delete('/favorite/remove', removeFavorite);
+router.get('/favorite/my-favorites', isLoggedIn, getMyFavoriteProducts);
 
 // router
 //   .route('/product/:slug')

@@ -40,20 +40,6 @@ module.exports = MPOrder;
 
 const beOrderSchema = new mongoose.Schema(
   {
-    user: {
-      name: { type: String, required: true },
-      id: { type: String, required: true },
-      email: { type: String, required: true },
-      phone: { type: String, required: true },
-    },
-    MPUserName: {
-      type: String,
-      required: [true, 'Name is required'],
-    },
-    MPmail: {
-      type: String,
-      required: [true, 'Phone is required'],
-    },
     status: {
       type: String,
       required: [true, 'Status is required'],
@@ -61,6 +47,20 @@ const beOrderSchema = new mongoose.Schema(
     statusDetail: {
       type: String,
       required: [true, 'Status detail is required'],
+    },
+    user: {
+      name: { type: String, required: false },
+      id: { type: String, required: false },
+      email: { type: String, required: false },
+      phone: { type: String, required: false },
+    },
+    MPUserName: {
+      type: String,
+      required: [false, 'Name is required'],
+    },
+    MPmail: {
+      type: String,
+      required: [false, 'Phone is required'],
     },
     products: [
       {

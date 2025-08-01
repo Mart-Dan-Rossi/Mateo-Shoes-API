@@ -3,7 +3,10 @@ const MPOrder = require('../models/order.model');
 
 const { ErrorHandler } = require('../utils/errorHandler');
 const { findUserById } = require('./user.controller');
-const { releaseReservations } = require('./product.controller');
+const {
+  releaseReservations,
+  cancelReservations,
+} = require('./product.controller');
 
 mercadopago.configure({
   access_token: process.env.MERCADO_PAGO_ACCESS_TOKEN,
@@ -54,7 +57,6 @@ const receiveWebhook = async (req, res) => {
   try {
     if (payment.type === 'payment') {
       const data = await mercadopago.payment.findById(payment['data.id']);
-      console.log('payment data: ', data);
 
       const MSUserId = data.response.metadata.user_id;
 
@@ -64,44 +66,55 @@ const receiveWebhook = async (req, res) => {
         throw new ErrorHandler(404, 'Usuario no encontrado');
       }
 
-      const parsedProducts = JSON.parse(data.body.metadata.products);
-      if (parsedProducts.length > 0) {
-        const order = new MPOrder({
-          user: {
-            name: MSUser.fullName,
-            id: MSUserId,
-            email: MSUser.email,
-            phone: MSUser.phoneNumber,
-          },
-          MPUserName: `${data.response.payer.first_name} ${data.response.payer.last_name}`,
-          MPmail: data.response.payer.email,
-          status: data.body.status,
-          statusDetail: data.body.status_detail,
-          products: parsedProducts.map(({ id, name, price, sizeOptions }) => {
-            const orderSizeOptions = sizeOptions.map((sizeOption) => {
-              const { usSize, color, quantity } = sizeOption;
+      if (data.body.status === 'approved') {
+        const parsedProducts = JSON.parse(data.body.metadata.products);
+        if (parsedProducts.length > 0) {
+          const order = new MPOrder({
+            user: {
+              name: MSUser.fullName,
+              id: MSUserId,
+              email: MSUser.email,
+              phone: MSUser.phoneNumber,
+            },
+            MPUserName: `${data.response.payer.first_name} ${data.response.payer.last_name}`,
+            MPmail: data.response.payer.email,
+            status: data.body.status,
+            statusDetail: data.body.status_detail,
+            products: parsedProducts.map(({ id, name, price, sizeOptions }) => {
+              const orderSizeOptions = sizeOptions.map((sizeOption) => {
+                const { usSize, color, quantity } = sizeOption;
 
-              return { usSize, color, quantity };
-            });
+                return { usSize, color, quantity };
+              });
 
-            return {
-              id,
-              name,
-              price,
-              sizeOptions: orderSizeOptions,
-            };
-          }),
-        });
+              return {
+                id,
+                name,
+                price,
+                sizeOptions: orderSizeOptions,
+              };
+            }),
+          });
 
-        await order.save();
+          await order.save();
 
-        await releaseReservations({
+          await releaseReservations({
+            slugs: parsedProducts.map((p) => p.slug),
+            userId: MSUserId,
+          });
+        }
+      } else if (
+        data.body.status === 'cancelled' ||
+        data.body.status === 'rejected' ||
+        data.body.status === 'charged_back' ||
+        data.body.status === 'refunded'
+      ) {
+        await cancelReservations({
           slugs: parsedProducts.map((p) => p.slug),
           userId: MSUserId,
         });
-
-        res.sendStatus(204);
       }
+      res.sendStatus(204);
     }
   } catch (err) {
     console.log('Webhook error:', err);

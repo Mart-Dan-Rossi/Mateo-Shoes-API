@@ -1,5 +1,8 @@
 const Product = require('../models/product.model');
 const { ErrorHandler } = require('../utils/errorHandler');
+const { findUserById } = require('./user.controller');
+
+const MPOrder = require('../models/order.model');
 
 // Welcome
 const welcomePage = (req, res, next) => {
@@ -368,6 +371,51 @@ const releaseReservations = async ({ slugs, userId }) => {
   }
 };
 
+const cancelReservations = async ({ slugs, userId }) => {
+  if (!Array.isArray(slugs) || !userId) {
+    throw new Error('Faltan datos necesarios');
+  }
+
+  for (const slug of slugs) {
+    const product = await Product.findOne({ slug });
+
+    if (!product) continue;
+
+    let modified = false;
+    const updatedSizeOptions = [...product.sizeOptions];
+
+    const userReservations =
+      product.reservedData?.filter((res) => res.userId === userId) || [];
+
+    for (const reservation of userReservations) {
+      const matchIndex = updatedSizeOptions.findIndex(
+        (sizeOption) =>
+          sizeOption.usSize === reservation.usSize &&
+          sizeOption.color.toLowerCase() === reservation.color.toLowerCase()
+      );
+
+      if (matchIndex !== -1) {
+        updatedSizeOptions[matchIndex].quantity += reservation.quantity;
+
+        if (updatedSizeOptions[matchIndex].quantity <= 0) {
+          updatedSizeOptions.splice(matchIndex, 1);
+        }
+
+        modified = true;
+      }
+    }
+
+    product.reservedData = product.reservedData.filter(
+      (res) => res.userId !== userId
+    );
+
+    if (updatedSizeOptions.length !== 0 && modified) {
+      product.sizeOptions = updatedSizeOptions;
+      await product.save();
+    }
+  }
+};
+
 const cancelReservation = async (req, res) => {
   try {
     const { slug, userId, usSize, color } = req.body;
@@ -380,10 +428,10 @@ const cancelReservation = async (req, res) => {
 
     product.reservedData = product.reservedData.filter((rD) => {
       return !(
-        rD.userId !== userId &&
-        rD.usSize.toString().toLowerCase() !==
+        rD.userId === userId &&
+        rD.usSize.toString().toLowerCase() ===
           usSize.toString().toLowerCase() &&
-        rD.color.toLowerCase() !== color.toLowerCase()
+        rD.color.toLowerCase() === color.toLowerCase()
       );
     });
 
@@ -401,6 +449,54 @@ const cancelReservation = async (req, res) => {
   }
 };
 
+const manualPurchaseHanlding = async (req, res) => {
+  try {
+    const { userId, products } = req.body;
+
+    const MSUser = await findUserById(userId);
+
+    if (!MSUser) {
+      throw new ErrorHandler(404, 'Usuario no encontrado');
+    }
+
+    if (products.length > 0) {
+      const order = new MPOrder({
+        user: {
+          name: MSUser.fullName,
+          id: userId,
+          email: MSUser.email,
+          phone: MSUser.phoneNumber,
+        },
+        status: 'approved',
+        statusDetail: 'accredited',
+        products: products.map(({ id, name, price, sizeOptions }) => {
+          const orderSizeOptions = sizeOptions.map((sizeOption) => {
+            const { usSize, color, quantity } = sizeOption;
+
+            return { usSize, color, quantity };
+          });
+
+          return {
+            id,
+            name,
+            price,
+            sizeOptions: orderSizeOptions,
+          };
+        }),
+      });
+
+      await order.save();
+
+      await releaseReservations({
+        slugs: products.map((p) => p.slug),
+        userId: userId,
+      });
+
+      res.sendStatus(204);
+    }
+  } catch (error) {}
+};
+
 module.exports = {
   welcomePage,
   getAllProductsList,
@@ -414,4 +510,6 @@ module.exports = {
   searchProduct,
   releaseReservations,
   cancelReservation,
+  manualPurchaseHanlding,
+  cancelReservations,
 };
