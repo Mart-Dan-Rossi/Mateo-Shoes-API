@@ -1,17 +1,21 @@
 const Product = require('../models/product.model');
 const { ErrorHandler } = require('../utils/errorHandler');
-const { findUserById } = require('./user.controller');
+const jwt = require('jsonwebtoken');
+
+const {
+  findUserById,
+  authAdminValidation,
+  authAccountValidation,
+} = require('./user.controller');
 
 const MPOrder = require('../models/order.model');
 
 // Welcome
 const welcomePage = (req, res, next) => {
   try {
-    res.send(
-      'Hey buddy! Feel free to create stuffs with this API. Try /products to get all products.'
-    );
+    res.send('/');
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -27,7 +31,7 @@ const getAllProductsList = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -46,27 +50,34 @@ const getParticularProduct = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
 const createProduct = async (req, res) => {
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     const product = new Product(req.body);
     await product.save();
 
     res.json({ message: 'Producto agregado.' });
   } catch (error) {
-    res.status(500).json({
-      error: 'Un error ha ocurrido agregando el producto.',
-      details: error.message,
-    });
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
 // Update a particular product
 const updateProduct = async (req, res, next) => {
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     const {
       productType,
       name,
@@ -100,14 +111,17 @@ const updateProduct = async (req, res, next) => {
 
     res.json({ message: 'Producto modificado exitosamente.' });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'Un error ha ocurrido modificando producto.' });
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
-const updateMultipleProducts = async (req, res, next) => {
+const updateMultipleProducts = async (req, res) => {
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     const { products } = req.body;
     if (!products || !Array.isArray(products)) {
       return res.status(400).json({ message: 'Lista de productos inválida' });
@@ -121,7 +135,7 @@ const updateMultipleProducts = async (req, res, next) => {
 
     res.json({ status: 'success', message: 'Productos actualizados' });
   } catch (error) {
-    res.status(500).json({ message: 'Error en la actualización' });
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -143,22 +157,25 @@ const reserveStock = async (req, res) => {
         .json({ message: 'Lista de actualizaciones inválida' });
     }
 
-    for (const {
-      id: updateId,
-      reservedData: updateReservedData,
-      userId: updateUserId,
-    } of updates) {
+    const authValidationRes = await authAccountValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
+    for (const { id: updateId, reservedData: updateReservedData } of updates) {
       const product = await Product.findById(updateId);
       if (!product) {
         throw new Error(`Producto con ID ${updateId} no encontrado.`);
       }
+
+      const userId = authValidationRes.user._id;
 
       // Remove previous user reservations of this product, size and color.
       product.reservedData = product.reservedData.filter((pRD) => {
         return !(
           pRD.color === updateReservedData.color &&
           pRD.usSize === updateReservedData.usSize &&
-          pRD.userId === updateUserId
+          pRD.userId === userId
         );
       });
 
@@ -207,7 +224,7 @@ const reserveStock = async (req, res) => {
         usSize: updateReservedData.usSize,
         color: updateReservedData.color,
         quantity: updateReservedData.quantity,
-        userId: updateUserId,
+        userId,
         timestamp: Date.now(),
       });
 
@@ -242,55 +259,55 @@ const reserveStock = async (req, res) => {
   }
 };
 
-const hideUserReservations = async (req, res) => {
-  const { userId } = req.body;
+// const hideUserReservations = async (req, res) => {
+//   const { userId } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ message: 'Falta el userId' });
-  }
+//   if (!userId) {
+//     return res.status(400).json({ message: 'Falta el userId' });
+//   }
 
-  try {
-    const products = await Product.find({
-      'reservedData.userId': userId,
-    });
+//   try {
+//     const products = await Product.find({
+//       'reservedData.userId': userId,
+//     });
 
-    if (products.length === 0) {
-      return res.status(404).json({
-        message: 'No se encontraron productos con reservas para este usuario.',
-      });
-    }
+//     if (products.length === 0) {
+//       return res.status(404).json({
+//         message: 'No se encontraron productos con reservas para este usuario.',
+//       });
+//     }
 
-    for (const product of products) {
-      let modified = false;
+//     for (const product of products) {
+//       let modified = false;
 
-      product.reservedData.forEach((reservation) => {
-        if (reservation.userId === userId && !reservation.hide) {
-          reservation.hide = true;
-          modified = true;
-        }
-      });
+//       product.reservedData.forEach((reservation) => {
+//         if (reservation.userId === userId && !reservation.hide) {
+//           reservation.hide = true;
+//           modified = true;
+//         }
+//       });
 
-      if (modified) {
-        await product.save();
-      }
-    }
+//       if (modified) {
+//         await product.save();
+//       }
+//     }
 
-    res.status(200).json({
-      message: `Reservas del usuario ${userId} ocultadas exitosamente.`,
-    });
-  } catch (error) {
-    console.error('Error al ocultar reservas:', error);
-    res.status(500).json({
-      message: 'Error al ocultar las reservas del usuario.',
-      error: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       message: `Reservas del usuario ${userId} ocultadas exitosamente.`,
+//     });
+//   } catch (error) {
+//     res.status(error.statusCode).json({ error: error.message });
+//   }
+// };
 
 const deleteProduct = async (req, res) => {
   const { _id } = req.body;
 
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
     const product = await Product.findById(_id);
 
     if (!product) {
@@ -302,9 +319,7 @@ const deleteProduct = async (req, res) => {
 
     res.json({ message: 'Producto eliminado.' });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'Un error ha ocurrido al eliminar el producto.' });
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -322,7 +337,7 @@ const searchProduct = async (req, res, next) => {
       products,
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -414,11 +429,20 @@ const cancelReservations = async ({ slugs, userId }) => {
       await product.save();
     }
   }
+
+  return;
 };
 
 const cancelReservation = async (req, res) => {
   try {
-    const { slug, userId, usSize, color } = req.body;
+    const { slug, usSize, color } = req.body;
+
+    const authValidationRes = await authAccountValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
+    const userId = authValidationRes.user._id;
 
     const product = await Product.findOne({ slug });
 
@@ -442,15 +466,52 @@ const cancelReservation = async (req, res) => {
       message: 'Reserva cancelada exitosamente.',
     });
   } catch (error) {
-    res.status(500).json({
-      message: 'Error al cancelar reserva.',
-      error: error.message,
+    res.status(error.statusCode).json({ error: error.message });
+  }
+};
+
+const adminCancelReservation = async (req, res) => {
+  try {
+    const { slug, userId, usSize, color } = req.body;
+
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
+    const product = await Product.findOne({ slug });
+
+    if (!product) {
+      throw new Error(`Producto de slug: ${slug} no encotnrado`);
+    }
+
+    product.reservedData = product.reservedData.filter((rD) => {
+      return !(
+        rD.userId === userId &&
+        rD.usSize.toString().toLowerCase() ===
+          usSize.toString().toLowerCase() &&
+        rD.color.toLowerCase() === color.toLowerCase()
+      );
     });
+
+    await product.save();
+
+    res.json({
+      status: 'completed',
+      message: 'Reserva cancelada exitosamente.',
+    });
+  } catch (error) {
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
 const manualPurchaseHanlding = async (req, res) => {
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     const { userId, products } = req.body;
 
     const MSUser = await findUserById(userId);
@@ -494,7 +555,9 @@ const manualPurchaseHanlding = async (req, res) => {
 
       res.sendStatus(204);
     }
-  } catch (error) {}
+  } catch (error) {
+    res.status(error.statusCode).json({ error: error.message });
+  }
 };
 
 module.exports = {
@@ -505,11 +568,12 @@ module.exports = {
   updateProduct,
   updateMultipleProducts,
   reserveStock,
-  hideUserReservations,
+  // hideUserReservations,
   deleteProduct,
   searchProduct,
   releaseReservations,
   cancelReservation,
+  adminCancelReservation,
   manualPurchaseHanlding,
   cancelReservations,
 };

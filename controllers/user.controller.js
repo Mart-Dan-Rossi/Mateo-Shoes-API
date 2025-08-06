@@ -3,7 +3,6 @@ const {
   registerUserSchema,
   loginUserSchema,
   forgotPasswordSchema,
-  editProductSchema,
 } = require('../validations/user.validation');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -26,7 +25,7 @@ const getUser = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -112,7 +111,7 @@ const loginUser = async (req, res, next) => {
         400,
         'Usuario no encontrado. No hay cuenta asociada a este mail. Por favor ve a la página de registro para crear una nueva cuenta.'
       );
-      
+
     const { error } = await loginUserSchema.validateAsync(data);
     if (error) throw new ErrorHandler(400, error.message);
 
@@ -124,7 +123,10 @@ const loginUser = async (req, res, next) => {
       );
 
     // Generate token for access
-    const token = jwt.sign({ sub: user._id, role: user.role }, process.env.JWT_TOKEN);
+    const token = jwt.sign(
+      { sub: user._id, role: user.role },
+      process.env.JWT_TOKEN
+    );
 
     res.status(200).json({
       status: 'success',
@@ -254,7 +256,7 @@ const verifyToken = async (req, res, next) => {
       message: 'Mail verificado exitosamente.',
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -317,6 +319,53 @@ const sendEmail = async (email, resetPasswordLink, verificationLink) => {
   }
 };
 
+const authAccountValidation = async (req) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new ErrorHandler(401, 'Token no proporcionado');
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.JWT_TOKEN);
+
+    const user = await User.findById(decodedToken.sub);
+    if (!user) {
+      throw new ErrorHandler(
+        401,
+        'Debes usar una cuenta registrada para realizar esta acción'
+      );
+    }
+    return { isValid: true, user };
+  } catch (error) {
+    return error;
+  }
+};
+
+const authAdminValidation = async (req) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new ErrorHandler(401, 'Token no proporcionado');
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.JWT_TOKEN);
+
+    const user = await User.findById(decodedToken.sub);
+    if (user.role !== 'admin') {
+      throw new ErrorHandler(
+        401,
+        'No tienes roles suficientes para realizar esta tarea'
+      );
+    }
+  } catch (error) {
+    return error;
+  }
+};
+
 module.exports = {
   getUser,
   findUserById,
@@ -325,4 +374,6 @@ module.exports = {
   forgotPassword,
   editProfile,
   verifyToken,
+  authAccountValidation,
+  authAdminValidation,
 };

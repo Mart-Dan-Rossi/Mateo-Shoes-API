@@ -1,25 +1,31 @@
 const BEOrder = require('../models/order.model');
 const { ErrorHandler } = require('../utils/errorHandler');
+const { authAdminValidation } = require('./user.controller');
 
-const createBEOrder = async (req, res, next) => {
-  try {
-    const data = req.body;
-    const order = await BEOrder.create({ ...data, user: req.user._id });
+// const createBEOrder = async (req, res, next) => {
+//   try {
+//     const data = req.body;
+//     const order = await BEOrder.create({ ...data, user: req.user._id });
 
-    res.status(200).json({
-      status: 'success',
-      message: 'La órden ha sido creada exitosamente',
-      data: {
-        order,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+//     res.status(200).json({
+//       status: 'success',
+//       message: 'La órden ha sido creada exitosamente',
+//       data: {
+//         order,
+//       },
+//     });
+//   } catch (error) {
+//     res.status(error.statusCode).json({ error: error.message });
+//   }
+// };
 
 const updateBEOrder = async (req, res) => {
   try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     const data = req.body;
 
     let order = await BEOrder.findById(data._id);
@@ -80,7 +86,7 @@ const getParticularOrder = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -98,7 +104,7 @@ const getMyOrders = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
@@ -113,12 +119,12 @@ const getAllOrdersList = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.status(error.statusCode).json({ error: error.message });
   }
 };
 
 module.exports = {
-  createBEOrder,
+  // createBEOrder,
   updateBEOrder,
   getParticularOrder,
   getMyOrders,

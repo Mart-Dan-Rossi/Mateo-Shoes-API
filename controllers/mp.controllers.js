@@ -2,7 +2,7 @@ const mercadopago = require('mercadopago');
 const MPOrder = require('../models/order.model');
 
 const { ErrorHandler } = require('../utils/errorHandler');
-const { findUserById } = require('./user.controller');
+const { findUserById, authAccountValidation } = require('./user.controller');
 const {
   releaseReservations,
   cancelReservations,
@@ -14,6 +14,11 @@ mercadopago.configure({
 
 const createOrder = async (req, res) => {
   try {
+    const authValidationRes = await authAccountValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
     let preference = {
       items: req.body.cartItems,
       back_urls: {
@@ -117,7 +122,6 @@ const receiveWebhook = async (req, res) => {
       res.sendStatus(204);
     }
   } catch (err) {
-    console.log('Webhook error:', err);
     return res.sendStatus(500).json({ error: err.message });
   }
 };

@@ -15,8 +15,9 @@ const {
   searchProduct,
   updateMultipleProducts,
   reserveStock,
-  hideUserReservations,
+  // hideUserReservations,
   cancelReservation,
+  adminCancelReservation,
   manualPurchaseHanlding,
 } = require('../controllers/product.controller');
 
@@ -38,7 +39,7 @@ const {
 
 const {
   getAllOrdersList,
-  createBEOrder,
+  // createBEOrder,
   updateBEOrder,
 } = require('../controllers/order.controller');
 
@@ -53,20 +54,21 @@ router.route('/').get(welcomePage);
 router.route('/products').get(getAllProductsList);
 
 router.post('/products/add', createProduct);
-router.delete('/products/remove', deleteProduct);
+router.post('/products/remove', deleteProduct);
 router.get('/products/search', searchProduct);
 router.get('/products/:slug', getParticularProduct);
 router.post('/products/update', updateProduct);
 router.post('/product/updateMultiple', updateMultipleProducts);
 
 router.post('/products/reserveProducts', reserveStock);
-router.post('/products/hideUserReservations', hideUserReservations);
+// router.post('/products/hideUserReservations', hideUserReservations);
 router.post('/products/cancelReservation', cancelReservation);
+router.post('/products/adminCancelReservation', adminCancelReservation);
 
 router.post('/products/manualPurchaseHanlding', manualPurchaseHanlding);
 
 router.route('/order').get(getAllOrdersList);
-router.post('/order/add', createBEOrder);
+// router.post('/order/add', createBEOrder);
 router.post('/order/update', updateBEOrder);
 router.post('/order/create-order', createOrder);
 
@@ -77,7 +79,7 @@ router.get('/order/orderpending', pending);
 router.post('/webhook', receiveWebhook);
 
 router.post('/favorite/add', addFavorite);
-router.delete('/favorite/remove', removeFavorite);
+router.post('/favorite/remove', removeFavorite);
 router.get('/favorite/my-favorites', isLoggedIn, getMyFavoriteProducts);
 
 // router

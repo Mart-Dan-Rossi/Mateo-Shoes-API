@@ -1,16 +1,21 @@
 const Favorite = require('../models/favorite.model');
 const Product = require('../models/product.model');
-const User = require('../models/user.model');
+const { authAccountValidation } = require('./user.controller');
 
 // Add a product to a user's favorites
 const addFavorite = async (req, res) => {
-  const { userId, productId } = req.body;
+  const { productId } = req.body;
 
   try {
-    const user = await User.findById(userId);
+    const authValidationRes = await authAccountValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
+    const userId = authValidationRes.user._id;
     const product = await Product.findById(productId);
 
-    if (!user || !product) {
+    if (!product) {
       return res
         .status(404)
         .json({ error: 'Usuario o producto no encontrados.' });
@@ -44,13 +49,18 @@ const addFavorite = async (req, res) => {
 
 // Remove a product from a user's favorites
 const removeFavorite = async (req, res) => {
-  const { userId, productId } = req.body;
+  const { productId } = req.body;
 
   try {
-    const user = await User.findById(userId);
+    const authValidationRes = await authAccountValidation(req);
+    if (authValidationRes && !authValidationRes.isValid) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+
+    const userId = authValidationRes.user._id;
     const product = await Product.findById(productId);
 
-    if (!user || !product) {
+    if (!product) {
       return res
         .status(404)
         .json({ error: 'Usuario o producto no encontrados.' });
