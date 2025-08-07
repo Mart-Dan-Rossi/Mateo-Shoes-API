@@ -123,10 +123,34 @@ const getAllOrdersList = async (req, res, next) => {
   }
 };
 
+const deleteOrder = async (req, res) => {
+  try {
+    const authValidationRes = await authAdminValidation(req);
+    if (authValidationRes && authValidationRes.message) {
+      throw new ErrorHandler(401, authValidationRes);
+    }
+    const { _id } = req.body;
+    const data = req.body;
+
+    let result = await BEOrder.deleteOne({ _id });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        orderData: data,
+        result: result,
+      },
+    });
+  } catch (error) {
+    res.status(error.statusCode).json({ error: error.message });
+  }
+};
+
 module.exports = {
   // createBEOrder,
   updateBEOrder,
   getParticularOrder,
   getMyOrders,
   getAllOrdersList,
+  deleteOrder,
 };

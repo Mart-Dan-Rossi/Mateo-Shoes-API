@@ -175,7 +175,7 @@ const reserveStock = async (req, res) => {
         return !(
           pRD.color === updateReservedData.color &&
           pRD.usSize === updateReservedData.usSize &&
-          pRD.userId === userId
+          pRD.userId === userId.toString()
         );
       });
 
@@ -355,29 +355,28 @@ const releaseReservations = async ({ slugs, userId }) => {
     const updatedSizeOptions = [...product.sizeOptions];
 
     const userReservations =
-      product.reservedData?.filter((res) => res.userId === userId) || [];
+      product.reservedData?.filter((res) => {
+        return res.userId === userId;
+      }) || [];
 
     for (const reservation of userReservations) {
-      const matchIndex = updatedSizeOptions.findIndex(
-        (sizeOption) =>
+      const matchIndex = updatedSizeOptions.findIndex((sizeOption) => {
+        return (
           sizeOption.usSize === reservation.usSize &&
           sizeOption.color.toLowerCase() === reservation.color.toLowerCase()
-      );
+        );
+      });
 
       if (matchIndex !== -1) {
         updatedSizeOptions[matchIndex].quantity -= reservation.quantity;
-
-        if (updatedSizeOptions[matchIndex].quantity <= 0) {
-          updatedSizeOptions.splice(matchIndex, 1);
-        }
 
         modified = true;
       }
     }
 
-    product.reservedData = product.reservedData.filter(
-      (res) => res.userId !== userId
-    );
+    product.reservedData = product.reservedData.filter((res) => {
+      return res.userId !== userId;
+    });
 
     if (updatedSizeOptions.length !== 0 && modified) {
       product.sizeOptions = updatedSizeOptions;

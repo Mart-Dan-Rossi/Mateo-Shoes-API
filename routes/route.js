@@ -41,6 +41,7 @@ const {
   getAllOrdersList,
   // createBEOrder,
   updateBEOrder,
+  deleteOrder,
 } = require('../controllers/order.controller');
 
 const router = express.Router();
@@ -70,7 +71,8 @@ router.post('/products/manualPurchaseHanlding', manualPurchaseHanlding);
 router.route('/order').get(getAllOrdersList);
 // router.post('/order/add', createBEOrder);
 router.post('/order/update', updateBEOrder);
-router.post('/order/create-order', createOrder);
+router.post('/order/delete', deleteOrder);
+router.post('/order/create', createOrder);
 
 router.get('/order/ordersuccess', success);
 router.get('/order/orderfailure', failure);
