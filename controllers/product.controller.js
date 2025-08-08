@@ -89,7 +89,7 @@ const updateProduct = async (req, res, next) => {
       tags,
       brand,
     } = req.body;
-
+    
     const product = await Product.findOne({ slug });
 
     if (!product) throw new ErrorHandler(404, 'El producto no existe');

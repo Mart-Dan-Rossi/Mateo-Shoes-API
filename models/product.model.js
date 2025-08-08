@@ -66,7 +66,9 @@ const productSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.Mixed,
             validate: {
               validator: function (v) {
-                return typeof v === 'number' || clothSizes.includes(v);
+                return (
+                  typeof v === 'number' || clothSizes.includes(v.toUpperCase())
+                );
               },
               message:
                 'Talle inválido (debe ser número o un talle de ropa válido)',

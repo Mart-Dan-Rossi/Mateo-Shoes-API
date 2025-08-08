@@ -22,12 +22,12 @@ const createOrder = async (req, res) => {
     let preference = {
       items: req.body.cartItems,
       back_urls: {
-        success: 'https://7e6d8f5c1be0.ngrok-free.app/pay/success',
-        failure: 'https://7e6d8f5c1be0.ngrok-free.app/pay/fail',
-        pending: 'https://7e6d8f5c1be0.ngrok-free.app/pay/success',
+        success: 'https://d248f4522d5f.ngrok-free.app/pay/success',
+        failure: 'https://d248f4522d5f.ngrok-free.app/pay/fail',
+        pending: 'https://d248f4522d5f.ngrok-free.app/pay/success',
       },
       auto_return: 'approved',
-      notification_url: 'https://7e6d8f5c1be0.ngrok-free.app/api/webhook',
+      notification_url: 'https://d248f4522d5f.ngrok-free.app/api/webhook',
       metadata: {
         ...req.body.metadata,
         products: JSON.stringify(req.body.metadata.products),
